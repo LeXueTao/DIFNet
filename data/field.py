@@ -197,7 +197,7 @@ class TextField(RawField):
         torch.long: int,
     }
     punctuations = ["''", "'", "``", "`", "-LRB-", "-RRB-", "-LCB-", "-RCB-", \
-                    ".", "?", "!", ",", ":", "-", "--", "...", ";"]
+                    ".", "?", "!", ",", ":", "-", "--", "...", ";"] # 截断符号
 
     def __init__(self, use_vocab=True, init_token=None, eos_token=None, fix_length=None, dtype=torch.long,
                  preprocessing=None, postprocessing=None, lower=False, tokenize=(lambda s: s.split()),
@@ -206,19 +206,19 @@ class TextField(RawField):
         self.use_vocab = use_vocab
         self.init_token = init_token
         self.eos_token = eos_token
-        self.fix_length = fix_length
+        self.fix_length = fix_length # 无固定长度
         self.dtype = dtype
-        self.lower = lower
-        self.tokenize = get_tokenizer(tokenize)
-        self.remove_punctuation = remove_punctuation
-        self.include_lengths = include_lengths
+        self.lower = lower # 全都小写
+        self.tokenize = get_tokenizer(tokenize) # tokenzie直接返回spacy的lambda函数
+        self.remove_punctuation = remove_punctuation # 标点符号
+        self.include_lengths = include_lengths #TODO: ???
         self.batch_first = batch_first
         self.pad_token = pad_token
         self.unk_token = unk_token
-        self.pad_first = pad_first
-        self.truncate_first = truncate_first
+        self.pad_first = pad_first #TODO: ???
+        self.truncate_first = truncate_first #TODO: ???
         self.vocab = None
-        self.vectors = vectors
+        self.vectors = vectors #TODO: ??
         if nopoints:
             self.punctuations.append("..")
 

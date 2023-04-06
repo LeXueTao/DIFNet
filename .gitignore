@@ -1,2 +1,10 @@
 coco*
 X101*
+
+dataset
+
+*.pth
+
+__pycache__
+
+output
