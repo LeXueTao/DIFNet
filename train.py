@@ -168,7 +168,7 @@ if __name__ == '__main__':
     parser.add_argument('--resume_best', action='store_true')
     parser.add_argument('--features_path', type=str, default='./dataset/coco_grid_feats2.hdf5')
     parser.add_argument('--pixel_path', type=str, default='./dataset/segmentations')
-    parser.add_argument('--annotation_folder', type=str, default='./dataset/annotations')
+    parser.add_argument('--annotation_folder', type=str, default='./dataset/coco2014/annotations')
     parser.add_argument('--logs_folder', type=str, default='./output/tensorboard_logs')
     parser.add_argument('--model_path', type=str, default='./output/saved_transformer_models')
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     text_field = TextField(init_token='<bos>', eos_token='<eos>', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False)
 
     # Create the dataset
-    dataset = COCO(image_field, text_field, pixel_field, 'coco/images/', args.annotation_folder, args.annotation_folder)
+    dataset = COCO(image_field, text_field, pixel_field, './dataset/coco2014', args.annotation_folder, args.annotation_folder)
     train_dataset, val_dataset, test_dataset = dataset.splits
 
     if not os.path.isfile('vocab.pkl'):

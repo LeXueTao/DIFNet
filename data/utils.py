@@ -4,8 +4,11 @@ import spacy
 class DummyFile(object):
     def write(self, x): pass
 
+# with语句必须有enter和exit
+# 这个装饰器就是提供上下文的作用
 @contextlib.contextmanager
 def nostdout():
+    # 实现重定向，原先位置是控制台
     save_stdout = sys.stdout
     sys.stdout = DummyFile()
     yield

@@ -28,7 +28,7 @@ class ScaledDotProductAttention_lrp(nn.Module):
         self.fc_v = Linear(d_model, h * d_v)
         self.fc_o = Linear(h * d_v, d_model)
         self.dropout = Dropout(dropout)
-        # A = Q*K^T
+        # A = Q*K^T(batch, head, index, dim)
         self.matmul1 = einsum('bhid,bhjd->bhij')
         # attn = A*V
         self.matmul2 = einsum('bhij,bhjd->bhid')    

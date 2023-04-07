@@ -32,7 +32,7 @@ class Difnet_LRP(CaptioningModel1):
                 nn.ReLU(),
                 nn.Dropout(p=0.1),
                 nn.LayerNorm(self.decoder.d_model))
-
+        #TODO: 如何load buffer
         self.register_state('enc_output', None)
         self.register_state('mask_enc', None)
         self.init_weights()

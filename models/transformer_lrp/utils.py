@@ -19,7 +19,7 @@ def position_embedding(input, d_model):
 def sinusoid_encoding_table(max_len, d_model, padding_idx=None):
     pos = torch.arange(max_len, dtype=torch.float32)
     out = position_embedding(pos, d_model)
-
+    # 非单词的特殊字符
     if padding_idx is not None:
         out[padding_idx] = 0
     return out

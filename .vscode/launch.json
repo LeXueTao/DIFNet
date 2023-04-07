@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "./train.py",
             "cwd": "${workspaceFolder}",
-            "env": {"CUDA_VISIBLE_DEVICES": "0"},
+            "env": {"CUDA_VISIBLE_DEVICES": "1"},
             "args": ["--mode", "difnet_lrp",
                      "--exp_name", "DIFNet_lrp"],
             "console": "integratedTerminal",

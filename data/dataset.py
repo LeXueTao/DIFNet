@@ -6,6 +6,7 @@ import torch
 from .example import Example
 from .utils import nostdout
 from pycocotools.coco import COCO as pyCOCO
+import json
 
 
 class Dataset(object):
@@ -192,6 +193,7 @@ class COCO(PairedDataset):
             'img': os.path.join(img_root, 'val2014'),
             'cap': os.path.join(ann_root, 'captions_val2014.json')
         }
+        # karpathy split
         roots['test'] = {
             'img': os.path.join(img_root, 'val2014'),
             'cap': os.path.join(ann_root, 'captions_val2014.json')
@@ -201,23 +203,9 @@ class COCO(PairedDataset):
             'cap': (roots['train']['cap'], roots['val']['cap'])
         }
 
-        if id_root is not None:
-            ids = {}
-            ids['train'] = np.load(os.path.join(id_root, 'coco_train_ids.npy'))
-            ids['val'] = np.load(os.path.join(id_root, 'coco_dev_ids.npy'))
-            if cut_validation:
-                ids['val'] = ids['val'][:5000]
-            ids['test'] = np.load(os.path.join(id_root, 'coco_test_ids.npy'))
-            ids['trainrestval'] = (
-                ids['train'],
-                np.load(os.path.join(id_root, 'coco_restval_ids.npy')))
 
-            if use_restval:
-                roots['train'] = roots['trainrestval']
-                ids['train'] = ids['trainrestval']
-        else:
-            ids = None
-
+        #TODO: 无用代码
+        ids = None
         with nostdout():
             self.train_examples, self.val_examples, self.test_examples = self.get_samples(roots, ids)
         examples = self.train_examples + self.val_examples + self.test_examples
@@ -237,26 +225,32 @@ class COCO(PairedDataset):
         test_samples = []
 
         for split in ['train', 'val', 'test']:
+            # 生成coco数据集
             if isinstance(roots[split]['cap'], tuple):
                 coco_dataset = (pyCOCO(roots[split]['cap'][0]), pyCOCO(roots[split]['cap'][1]))
                 root = roots[split]['img']
             else:
                 coco_dataset = (pyCOCO(roots[split]['cap']),)
                 root = (roots[split]['img'],)
-
+            #TODO: 有bug，加上coco_dataset[0]
             if ids_dataset is None:
-                ids = list(coco_dataset.anns.keys())
+                # ids：是总共有哪些id
+                # ids = list(coco_dataset[0].anns.keys())
+                ids: list = []
+                for i in range(len(coco_dataset)):
+                    ids += coco_dataset[i].anns.keys()
             else:
                 ids = ids_dataset[split]
 
             if isinstance(ids, tuple):
-                bp = len(ids[0])
+                beakpoint = len(ids[0])
                 ids = list(ids[0]) + list(ids[1])
             else:
-                bp = len(ids)
+                beakpoint = len(ids)
 
-            for index in range(len(ids)):
-                if index < bp:
+            #TODO: for index in range(len(ids)):
+            for index in range(120):
+                if index < beakpoint:
                     coco = coco_dataset[0]
                     img_root = root[0]
                 else:
@@ -267,7 +261,7 @@ class COCO(PairedDataset):
                 caption = coco.anns[ann_id]['caption']
                 img_id = coco.anns[ann_id]['image_id']
                 filename = coco.loadImgs(img_id)[0]['file_name']
-
+                # 生成一个类，类属性是这三个东西
                 example = Example.fromdict({'image': os.path.join(img_root, filename), 'text': caption, 'pixel': os.path.join(img_root, filename)})
 
                 if split == 'train':
