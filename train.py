@@ -10,7 +10,7 @@ from models.difnet_lrp import Difnet_LRP, DifnetEncoder_LRP
 
 import torch
 from torch.optim import Adam
-from torch.optim.lr_scheduler import LambdaLR
+# from torch.optim.lr_scheduler import LambdaLR
 from torch.nn import NLLLoss
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
@@ -200,6 +200,12 @@ if __name__ == '__main__':
         print('Loading from vocabulary')
         text_field.vocab = pickle.load(open('vocab.pkl', 'rb'))
         
+    dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
+    ref_caps_train = list(train_dataset.text)
+    cider_train = Cider(PTBTokenizer.tokenize(ref_caps_train))
+    dict_dataset_val = val_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
+    dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})    
+
     # Model and dataloaders
     if args.mode == 'base':
         encoder = TransformerEncoder(3, 0, attention_module=ScaledDotProductAttention)
@@ -218,11 +224,6 @@ if __name__ == '__main__':
         decoder = TransformerDecoder_LRP(len(text_field.vocab), 54, 3, text_field.vocab.stoi['<pad>'])
         model = Difnet_LRP(text_field.vocab.stoi['<bos>'], encoder, decoder).to(device)
 
-    dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
-    ref_caps_train = list(train_dataset.text)
-    cider_train = Cider(PTBTokenizer.tokenize(ref_caps_train))
-    dict_dataset_val = val_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
-    dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
 
     '''
     def lambda_lr(s):
@@ -257,7 +258,7 @@ if __name__ == '__main__':
 
     # Initial conditions
     optim = Adam(model.parameters(), lr=1, betas=(0.9, 0.98))
-    scheduler = LambdaLR(optim, lambda_lr)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lambda_lr)
 
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
     use_rl = False
@@ -291,11 +292,9 @@ if __name__ == '__main__':
 
     print("Training starts")
     for e in range(start_epoch, start_epoch + 100):
-        dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,
-                                      drop_last=True)
+        dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,drop_last=True)
         dataloader_val = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
-        dict_dataloader_train = DataLoader(dict_dataset_train, batch_size=args.batch_size // 5, shuffle=True,
-                                           num_workers=args.workers)
+        dict_dataloader_train = DataLoader(dict_dataset_train, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
         dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5)
         dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5)
 

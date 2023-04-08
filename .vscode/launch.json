@@ -8,13 +8,18 @@
             "name": "Python: 当前文件",
             "type": "python",
             "request": "launch",
-            "program": "./train.py",
             "cwd": "${workspaceFolder}",
-            "env": {"CUDA_VISIBLE_DEVICES": "1"},
+            "env": {"CUDA_VISIBLE_DEVICES": "0"},
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            // 训练
+            "program": "./train.py",
             "args": ["--mode", "difnet_lrp",
                      "--exp_name", "DIFNet_lrp"],
-            "console": "integratedTerminal",
-            "justMyCode": true
+            // 测试
+            // "program": "./test.py",
+            // "args": ["--mode", "difnet_lrp",
+            //         "--exp_name", "DIFNet_lrp"],
         }
     ]
 }

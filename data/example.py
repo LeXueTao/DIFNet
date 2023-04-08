@@ -12,7 +12,7 @@ class Example(object):
         for key, val in data.items():
             super(Example, self).__setattr__(key, val)
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key, value): 
         raise AttributeError
 
     def __hash__(self):

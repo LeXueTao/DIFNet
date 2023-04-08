@@ -84,7 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, default='./output/saved_transformer_models')
     parser.add_argument('--out_path', type=str, default='./output/output_lrp')
     parser.add_argument('--features_path', type=str, default='./dataset/coco_grid_feats2.hdf5')
-    parser.add_argument('--annotation_folder', type=str, default='./dataset/m2_annotations')
+    parser.add_argument('--annotation_folder', type=str, default='./dataset/coco2014/annotations')
     parser.add_argument('--pixel_path', type=str, default='./dataset/segmentations')
 
     parser.add_argument('--embed_size', type=int, default=512,

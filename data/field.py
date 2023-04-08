@@ -129,7 +129,7 @@ class ImageDetectionsField(RawField):
 
         return precomp_data.astype(np.float32)
 
-
+ 
 class ImageDetectionsField152(RawField):
     '''return grid-152'''
     def __init__(self, preprocessing=None, postprocessing=None, detections_path=None, max_detections=100,

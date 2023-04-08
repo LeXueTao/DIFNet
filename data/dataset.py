@@ -90,6 +90,7 @@ class ValueDataset(Dataset):
 
 
 class DictionaryDataset(Dataset):
+    """dict数据集用于SCST训练"""
     def __init__(self, examples, fields, key_fields):
         if not isinstance(key_fields, (tuple, list)):
             key_fields = (key_fields,)
@@ -151,13 +152,18 @@ class PairedDataset(Dataset):
         self.pixel_field = self.fields['pixel']
 
     def image_set(self):
+        # 加载了两个val集合，这里是去重复
+        # 很遗憾，没在文件中找到该函数的使用地方
         img_list = [e.image for e in self.examples]
         image_set = unique(img_list)
+        # 单独生成Image_dataset
         examples = [Example.fromdict({'image': i}) for i in image_set]
         dataset = Dataset(examples, {'image': self.image_field})
         return dataset
 
     def text_set(self):
+        # 加载了两个val集合，这里是去重复
+        # 由于pixel的在提取时候去过了，这里不用去重
         text_list = [e.text for e in self.examples]
         text_list = unique(text_list)
         examples = [Example.fromdict({'text': t}) for t in text_list]
@@ -182,6 +188,7 @@ class PairedDataset(Dataset):
 
 
 class COCO(PairedDataset):
+    """COCO只负责了提取划分"""
     def __init__(self, image_field, text_field, pixel_field, img_root, ann_root, id_root=None, use_restval=True,
                  cut_validation=False):
         roots = {}
@@ -249,7 +256,7 @@ class COCO(PairedDataset):
                 beakpoint = len(ids)
 
             #TODO: for index in range(len(ids)):
-            for index in range(120):
+            for index in range(len(ids)):
                 if index < beakpoint:
                     coco = coco_dataset[0]
                     img_root = root[0]
