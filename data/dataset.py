@@ -18,12 +18,12 @@ class Dataset(object):
         def collate(batch):
             if len(self.fields) == 1:
                 batch = [batch, ]
-            else:
+            else: # 图片和图片放一起，文字和文字放一起
                 batch = list(zip(*batch))
 
             tensors = []
             for field, data in zip(self.fields.values(), batch):
-                tensor = field.process(data)
+                tensor = field.process(data) #这一步转换为tensor
                 if isinstance(tensor, collections.Sequence) and any(isinstance(t, torch.Tensor) for t in tensor):
                     tensors.extend(tensor)
                 else:
@@ -42,7 +42,7 @@ class Dataset(object):
         for field_name, field in self.fields.items():
             data.append(field.preprocess(getattr(example, field_name)))
 
-        if len(data) == 1:
+        if len(data) == 1: # 兼容性
             data = data[0]
         return data
 

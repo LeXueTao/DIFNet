@@ -8,7 +8,8 @@ import os
 import zipfile
 
 import six
-from six.moves.urllib.request import urlretrieve
+# from six.moves.urllib.request import urlretrieve
+from urllib.request import urlretrieve
 import torch
 from tqdm import tqdm
 import tarfile

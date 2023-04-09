@@ -192,6 +192,7 @@ if __name__ == '__main__':
     dataset = COCO(image_field, text_field, pixel_field, './dataset/coco2014', args.annotation_folder, args.annotation_folder)
     train_dataset, val_dataset, test_dataset = dataset.splits
 
+    # 自己造了一个词典
     if not os.path.isfile('vocab.pkl'):
         print("Building vocabulary")
         text_field.build_vocab(train_dataset, val_dataset, min_freq=5)

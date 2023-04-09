@@ -113,18 +113,19 @@ class ImageDetectionsField(RawField):
         image_id = int(x.split('_')[-1].split('.')[0])
         try:
             f = h5py.File(self.detections_path, 'r')
-            precomp_data = f['%d_features' % image_id][()]
-            # precomp_data = f['%d_grids' % image_id][()]
-            if self.sort_by_prob:
+            # 上面这句原始的代码，有错误，应该是测试图片时使用的
+            # precomp_data = f['%d_features' % image_id][()]
+            precomp_data = f['%d_grids' % image_id][()]
+            if self.sort_by_prob:# 训练阶段加载不了这个
                 precomp_data = precomp_data[np.argsort(np.max(f['%d_cls_prob' % image_id][()], -1))[::-1]]
         except KeyError:
             warnings.warn('Could not find detections for %d' % image_id)
             precomp_data = np.random.rand(10,2048)
-
+        # 这里设置的大小是7*7=49的大小
         delta = self.max_detections - precomp_data.shape[0]
-        if delta > 0:
+        if delta > 0:# 如果没有这张图片，前半部分随机数，后面再补0
             precomp_data = np.concatenate([precomp_data, np.zeros((delta, precomp_data.shape[1]))], axis=0)
-        elif delta < 0:
+        elif delta < 0:# 如果过长直接阶段
             precomp_data = precomp_data[:self.max_detections]
 
         return precomp_data.astype(np.float32)
@@ -211,25 +212,25 @@ class TextField(RawField):
         self.lower = lower # 全都小写
         self.tokenize = get_tokenizer(tokenize) # tokenzie直接返回spacy的lambda函数
         self.remove_punctuation = remove_punctuation # 标点符号
-        self.include_lengths = include_lengths #TODO: ???
+        self.include_lengths = include_lengths # 训练里面是否包含长度
         self.batch_first = batch_first
         self.pad_token = pad_token
         self.unk_token = unk_token
-        self.pad_first = pad_first #TODO: ???
-        self.truncate_first = truncate_first #TODO: ???
+        self.pad_first = pad_first # pad放在前面还是后面
+        self.truncate_first = truncate_first # 从前面截断还是后面截断
         self.vocab = None
         self.vectors = vectors #TODO: ??
         if nopoints:
             self.punctuations.append("..")
-
+        # 这里的数据形式是被pad包含着的bos还有eos
         super(TextField, self).__init__(preprocessing, postprocessing)
 
     def preprocess(self, x):
         if six.PY2 and isinstance(x, six.string_types) and not isinstance(x, six.text_type):
-            x = six.text_type(x, encoding='utf-8')
+            x = six.text_type(x, encoding='utf-8') # 兼容Python2和Python3
         if self.lower:
             x = six.text_type.lower(x)
-        x = self.tokenize(x.rstrip('\n'))
+        x = self.tokenize(x.rstrip('\n')) # 删除字符尾巴指定字符
         if self.remove_punctuation:
             x = [w for w in x if w not in self.punctuations]
         if self.preprocessing is not None:
