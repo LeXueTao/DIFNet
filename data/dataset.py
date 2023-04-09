@@ -256,7 +256,7 @@ class COCO(PairedDataset):
                 beakpoint = len(ids)
 
             #TODO: for index in range(len(ids)):
-            for index in range(len(ids)):
+            for index in range(100):
                 if index < beakpoint:
                     coco = coco_dataset[0]
                     img_root = root[0]
