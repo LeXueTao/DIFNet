@@ -44,7 +44,7 @@ def evaluate_loss(model, dataloader, loss_fn, text_field):
                 this_loss = loss.item()
                 running_loss += this_loss
 
-                pbar.set_postfix(loss=running_loss / (it + 1))
+                pbar.set_postfix(avg_loss=running_loss / (it + 1))
                 pbar.update()
                 if test:
                     break

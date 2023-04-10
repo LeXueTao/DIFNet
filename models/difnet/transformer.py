@@ -69,7 +69,7 @@ class Difnet(CaptioningModel1):
                 visual = self.embed_image(visual)
                 pixel = self.embed_pixel(pixel)
                 self.enc_output, self.mask_enc = self.encoder(visual, pixel)
-                if isinstance(visual, torch.Tensor):
+                if isinstance(visual, torch.Tensor): # 第一波添加开始符号
                     it = visual.data.new_full((visual.shape[0], 1), self.bos_idx).long()
                 else:
                     it = visual[0].data.new_full((visual[0].shape[0], 1), self.bos_idx).long()

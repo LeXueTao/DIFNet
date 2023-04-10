@@ -48,10 +48,10 @@ class Module(nn.Module):
                 self._buffers[name] = None
             else:
                 self._buffers[name] = self._state_defaults[name].clone().detach().to(self._buffers[name].device)
-
+    # 最终由difnet继承，这里的self指difnet
     def enable_statefulness(self, batch_size: int):
         for m in self.children():
-            if isinstance(m, Module):
+            if isinstance(m, Module): # 测试是否是自己写的module类型
                 m.enable_statefulness(batch_size)
         self._init_states(batch_size)
         self._is_stateful = True
@@ -65,6 +65,7 @@ class Module(nn.Module):
 
     @contextmanager
     def statefulness(self, batch_size: int):
+        """实现对buffer的保存和复原"""
         self.enable_statefulness(batch_size)
         try:
             yield
