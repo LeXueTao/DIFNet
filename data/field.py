@@ -224,8 +224,9 @@ class TextField(RawField):
             self.punctuations.append("..")
         # 这里的数据形式是被pad包含着的bos还有eos
         super(TextField, self).__init__(preprocessing, postprocessing)
-
+    
     def preprocess(self, x):
+        """"分词"""
         if six.PY2 and isinstance(x, six.string_types) and not isinstance(x, six.text_type):
             x = six.text_type(x, encoding='utf-8') # 兼容Python2和Python3
         if self.lower:
@@ -264,6 +265,7 @@ class TextField(RawField):
             tok for tok in [self.unk_token, self.pad_token, self.init_token,
                             self.eos_token]
             if tok is not None]))
+        # 这里面特殊字符都给的0
         self.vocab = self.vocab_cls(counter, specials=specials, **kwargs)
 
     def pad(self, minibatch):
@@ -328,7 +330,7 @@ class TextField(RawField):
                 arr = self.postprocessing(arr, self.vocab)
                 
             var = torch.tensor(arr, dtype=self.dtype, device=device)
-        else:
+        else: # 下面的是用词向量处理
             if self.vectors:
                 arr = [[self.vectors[x] for x in ex] for ex in arr]
             if self.dtype not in self.dtypes:

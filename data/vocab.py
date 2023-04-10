@@ -63,7 +63,7 @@ class Vocab(object):
 
         max_size = None if max_size is None else max_size + len(self.itos)
 
-        # sort by frequency, then alphabetically
+        # sort by frequency, then alphabetically，先按频率再按字母顺序
         words_and_frequencies = sorted(counter.items(), key=lambda tup: tup[0])
         words_and_frequencies.sort(key=lambda tup: tup[1], reverse=True)
 
@@ -72,6 +72,7 @@ class Vocab(object):
                 break
             self.itos.append(word)
 
+        # defaultdict会返回默认值，这里就是0
         self.stoi = defaultdict(_default_unk_index)
         # stoi is simply a reverse dict for itos
         self.stoi.update({tok: i for i, tok in enumerate(self.itos)})

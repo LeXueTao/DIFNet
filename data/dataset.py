@@ -28,7 +28,7 @@ class Dataset(object):
                     tensors.extend(tensor)
                 else:
                     tensors.append(tensor)
-
+            # 返回List，里面是3个类型，(batch_size, dim)
             if len(tensors) > 1:
                 return tensors
             else:
@@ -48,8 +48,8 @@ class Dataset(object):
 
     def __len__(self):
         return len(self.examples)
-
-    def __getattr__(self, attr):
+    # 返回一个迭代器，节省空间
+    def __getattr__(self, attr): 
         if attr in self.fields:
             for x in self.examples:
                 yield getattr(x, attr)

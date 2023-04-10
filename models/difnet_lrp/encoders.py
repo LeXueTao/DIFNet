@@ -66,7 +66,7 @@ class MultiLevelEncoder(nn.Module):
         # self.add2 = Add()
 
     def forward(self, input, pixel, attention_weights=None):
-        # input (b_s, seq_len, d_in)
+        # input (b_s, seq_len, d_in)，会有全0的就是需要掩掉的
         attention_mask = (torch.sum(input, -1) == self.padding_idx).unsqueeze(1).unsqueeze(1)  # (b_s, 1, 1, seq_len)
         pixel_attention_mask = (torch.sum(pixel, -1) == self.padding_idx).unsqueeze(1).unsqueeze(1)  # (b_s, 1, 1, seq_len)
 

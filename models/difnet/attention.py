@@ -185,7 +185,7 @@ class MultiHeadAttention(Module):
                 v_norm = self.layer_norm1(values)
             out = self.attention(q_norm, k_norm, v_norm, attention_mask, attention_weights)
             out = queries + self.dropout(torch.relu(out))
-        else:
+        else: # difnet中IILN部分
             out = self.attention(queries, keys, values, attention_mask, attention_weights)
             out = self.dropout(out)
             if m==0:

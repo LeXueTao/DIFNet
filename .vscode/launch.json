@@ -14,8 +14,8 @@
             "justMyCode": true,
             // 训练
             "program": "./train.py",
-            "args": ["--mode", "difnet_lrp",
-                     "--exp_name", "DIFNet_lrp"],
+            "args": ["--mode", "difnet",
+                     "--exp_name", "DIFNet"],
             // 测试
             // "program": "./test.py",
             // "args": ["--mode", "difnet_lrp",

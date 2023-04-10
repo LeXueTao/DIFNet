@@ -82,7 +82,7 @@ def evaluate_metrics(model, dataloader, text_field):
 def train_xe(model, dataloader, optim, text_field):
     # Training with cross-entropy
     model.train()
-    scheduler.step()
+    # scheduler.step()
     running_loss = .0
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader)) as pbar:
         for it, (detections, captions, pixels) in enumerate(dataloader):
@@ -98,9 +98,9 @@ def train_xe(model, dataloader, optim, text_field):
             this_loss = loss.item()
             running_loss += this_loss
 
-            pbar.set_postfix(loss=running_loss / (it + 1))
+            pbar.set_postfix(avg_loss=running_loss / (it + 1))
             pbar.update()
-            # scheduler.step()
+            scheduler.step()
             if test:
                 break
 
@@ -192,6 +192,7 @@ if __name__ == '__main__':
     dataset = COCO(image_field, text_field, pixel_field, './dataset/coco2014', args.annotation_folder, args.annotation_folder)
     train_dataset, val_dataset, test_dataset = dataset.splits
 
+    #TODO: 下面是原版
     # 自己造了一个词典
     if not os.path.isfile('vocab.pkl'):
         print("Building vocabulary")
@@ -200,6 +201,8 @@ if __name__ == '__main__':
     else:
         print('Loading from vocabulary')
         text_field.vocab = pickle.load(open('vocab.pkl', 'rb'))
+
+
         
     dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
     ref_caps_train = list(train_dataset.text)
@@ -292,7 +295,7 @@ if __name__ == '__main__':
             print('num_workers:', args.workers)
 
     print("Training starts")
-    for e in range(start_epoch, start_epoch + 100):
+    for e in range(start_epoch, start_epoch + 4):
         dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,drop_last=True)
         dataloader_val = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
         dict_dataloader_train = DataLoader(dict_dataset_train, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)

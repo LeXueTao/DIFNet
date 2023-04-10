@@ -25,7 +25,7 @@ class EncoderLayer(nn.Module):
             att = self.lnorm(queries + self.dropout(att))
         else:
             att = self.lnorm1(queries + self.dropout(att))
-        ff = self.pwff(att, m)
+        ff = self.pwff(att, m) # 还有一个layernorm埋在这里面了
         return ff
 
 
@@ -48,15 +48,16 @@ class MultiLevelEncoder(nn.Module):
 
     def forward(self, input, pixel, attention_weights=None):
         # input (b_s, seq_len, d_in)
+        #TODO: 不可用向量给mask掉
         attention_mask = (torch.sum(input, -1) == self.padding_idx).unsqueeze(1).unsqueeze(1)  # (b_s, 1, 1, seq_len)
         pixel_attention_mask = (torch.sum(pixel, -1) == self.padding_idx).unsqueeze(1).unsqueeze(1)  # (b_s, 1, 1, seq_len)
 
         out = input
         out1 = pixel
 
-        for i, l in enumerate(self.layers):
+        for i, l in enumerate(self.layers): # 这里循环了两次
             if i < self.Lf:
-                for t in range(self.T):
+                for t in range(self.T): # m的数值区分是grid还是seg，IILN里面有私有结构
                     out = l(out, out, out, attention_mask, attention_weights, m=0)
                     out1 = l(out1, out1, out1, pixel_attention_mask, attention_weights, m=1)
 
