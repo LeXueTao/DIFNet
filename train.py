@@ -66,7 +66,7 @@ def evaluate_metrics(model, dataloader, text_field):
                 out, _ = model.beam_search(images, pixels, 20, text_field.vocab.stoi['<eos>'], 5, out_size=1)
             caps_gen = text_field.decode(out, join_words=False)
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
-                gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)]) # 去除重复元素（如果由重复元素呢？？）
+                gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)]) #TODO: 去除重复元素（如果由重复元素呢？？）
                 gen['%d_%d' % (it, i)] = [gen_i, ]
                 gts['%d_%d' % (it, i)] = gts_i
             pbar.update()

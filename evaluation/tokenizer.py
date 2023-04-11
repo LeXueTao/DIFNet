@@ -42,7 +42,7 @@ class PTBTokenizer(object):
         tmp_file.write(sentences.encode())
         tmp_file.close()
 
-        # tokenize sentence
+        # 将每句话中每个词语以及标点符号以空格隔开
         cmd.append(os.path.basename(tmp_file.name))
         p_tokenizer = subprocess.Popen(cmd, cwd=path_to_jar_dirname, \
                 stdout=subprocess.PIPE, stderr=open(os.devnull, 'w'))
@@ -59,5 +59,6 @@ class PTBTokenizer(object):
             tokenized_caption = ' '.join([w for w in line.rstrip().split(' ') \
                                           if w not in cls.punctuations])
             tokenized_corpus[k].append(tokenized_caption)
+
 
         return tokenized_corpus
