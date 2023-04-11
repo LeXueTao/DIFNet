@@ -22,9 +22,7 @@ from collections import defaultdict
 
 
 def precook(s, n=4, out=False):
-    """Takes a string as input and returns an object that can be given to
-    either cook_refs or cook_test. This is optional: cook_refs and cook_test
-    can take string arguments as well."""
+    """返回单个句子的n:1-4的gram计数"""
     words = s.split()
     counts = defaultdict(int)
     for k in range(1, n + 1):
@@ -35,16 +33,14 @@ def precook(s, n=4, out=False):
 
 
 def cook_refs(refs, eff=None, n=4):  ## lhuang: oracle will call with "average"
-    '''Takes a list of reference sentences for a single segment
-    and returns an object that encapsulates everything that BLEU
-    needs to know about them.'''
+    '''统计对应多个参考句的maxcounts'''
 
     reflen = []
     maxcounts = {}
     for ref in refs:
         rl, counts = precook(ref, n)
         reflen.append(rl)
-        for (ngram, count) in counts.items():
+        for (ngram, count) in counts.items(): # max做法是为了其他句子中的参数
             maxcounts[ngram] = max(maxcounts.get(ngram, 0), count)
 
     # Calculate effective reference sentence length.
@@ -55,8 +51,8 @@ def cook_refs(refs, eff=None, n=4):  ## lhuang: oracle will call with "average"
 
     ## lhuang: N.B.: leave reflen computaiton to the very end!!
 
-    ## lhuang: N.B.: in case of "closest", keep a list of reflens!! (bad design)
-
+    ## lhuang: N.B.: in case of "closest", keep a list of reflens!! (bad design) 
+    ## leexuetao: N.B.: you are right!!!
     return (reflen, maxcounts)
 
 
@@ -69,21 +65,21 @@ def cook_test(test, ref_tuple, eff=None, n=4):
 
     result = {}
 
-    # Calculate effective reference sentence length.
+    # 找到有效参考句长度.
 
-    if eff == "closest":
+    if eff == "closest": # min()对于元组，只看第一个数据，第二个数据都一样的时候再看
         result["reflen"] = min((abs(l - testlen), l) for l in reflen)[1]
     else:  ## i.e., "average" or "shortest" or None
         result["reflen"] = reflen
 
     result["testlen"] = testlen
-
+    # test在不同gram_num下可以划分的长度
     result["guess"] = [max(0, testlen - k + 1) for k in range(1, n + 1)]
 
     result['correct'] = [0] * n
-    for (ngram, count) in counts.items():
+    for (ngram, count) in counts.items(): # 计算分子，test在ref中出现多少次
         result["correct"][len(ngram) - 1] += min(refmaxcounts.get(ngram, 0), count)
-
+    
     return result
 
 
@@ -115,9 +111,9 @@ class BleuScorer(object):
     def cook_append(self, test, refs):
         '''called by constructor and __iadd__ to avoid creating new instances.'''
 
-        if refs is not None:
+        if refs is not None: # 获得一个元组，长度列表和ngram字典
             self.crefs.append(cook_refs(refs))
-            if test is not None:
+            if test is not None: # self.crefs[-1]：刚刚进来的refs
                 cooked_test = cook_test(test, self.crefs[-1])
                 self.ctest.append(cooked_test)  ## N.B.: -1
             else:
@@ -205,7 +201,7 @@ class BleuScorer(object):
         return self.compute_score(option, verbose)
 
     def compute_score(self, option=None, verbose=0):
-        n = self.n
+        n = self.n # 前面准备了n:1-4的数据
         small = 1e-9
         tiny = 1e-15  ## so that if guess is 0 still return 0
         bleu_list = [[] for _ in range(n)]
@@ -222,28 +218,27 @@ class BleuScorer(object):
 
         # for each sentence
         for comps in self.ctest:
-            testlen = comps['testlen']
-            self._testlen += testlen
+            testlen = comps['testlen'] # testlen: 句子分词长度
+            self._testlen += testlen # 其实是分母相加
 
             if self.special_reflen is None:  ## need computation
                 reflen = self._single_reflen(comps['reflen'], option, testlen)
             else:
                 reflen = self.special_reflen
-
-            self._reflen += reflen
-
+            # 每对testlen和reflen中给出一个reflen，相加所有
+            self._reflen += reflen 
+            # guess:可匹配个数 correct:正确匹配的个数
             for key in ['guess', 'correct']:
                 for k in range(n):
                     totalcomps[key][k] += comps[key][k]
 
             # append per image bleu score
             bleu = 1.
-            for k in range(n):
-                bleu *= (float(comps['correct'][k]) + tiny) \
-                        / (float(comps['guess'][k]) + small)
+            for k in range(n): # 当前句的bleu分数，guess指test句子在不同gram_num下划分数
+                bleu *= (float(comps['correct'][k]) + tiny) / (float(comps['guess'][k]) + small)
                 bleu_list[k].append(bleu ** (1. / (k + 1)))
             ratio = (testlen + tiny) / (reflen + small)  ## N.B.: avoid zero division
-            if ratio < 1:
+            if ratio < 1: # 惩罚因子，如果过短会惩罚
                 for k in range(n):
                     bleu_list[k][-1] *= math.exp(1 - 1 / ratio)
 
@@ -256,8 +251,7 @@ class BleuScorer(object):
         bleus = []
         bleu = 1.
         for k in range(n):
-            bleu *= float(totalcomps['correct'][k] + tiny) \
-                    / (totalcomps['guess'][k] + small)
+            bleu *= float(totalcomps['correct'][k] + tiny) / (totalcomps['guess'][k] + small)
             bleus.append(bleu ** (1. / (k + 1)))
         ratio = (self._testlen + tiny) / (self._reflen + small)  ## N.B.: avoid zero division
         if ratio < 1:
@@ -267,6 +261,6 @@ class BleuScorer(object):
         if verbose > 0:
             print(totalcomps)
             print("ratio:", ratio)
-
+        # 最后只用了总的，测试还是ref都当成一句话
         self._score = bleus
         return self._score, bleu_list

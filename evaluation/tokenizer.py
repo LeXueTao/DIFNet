@@ -34,9 +34,9 @@ class PTBTokenizer(object):
         # prepare data for PTB Tokenizer
         tokenized_corpus = {}
         image_id = [k for k, v in list(corpus.items()) for _ in range(len(v))]
-        sentences = '\n'.join([c.replace('\n', ' ') for k, v in corpus.items() for c in v])
+        sentences = '\n'.join([c.replace('\n', ' ') for k, v in corpus.items() for c in v]) # 全都放到一段话中
 
-        # save sentences to temporary file
+        # save sentences to temporary file，临时文件可以自动删除
         path_to_jar_dirname=os.path.dirname(os.path.abspath(__file__))
         tmp_file = tempfile.NamedTemporaryFile(delete=False, dir=path_to_jar_dirname)
         tmp_file.write(sentences.encode())

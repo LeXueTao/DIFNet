@@ -56,6 +56,7 @@ class Dataset(object):
 
 
 class ValueDataset(Dataset):
+    """处理gt_cap数据，返回一个照片对应的所有cap"""
     def __init__(self, examples, fields, dictionary):
         self.dictionary = dictionary
         super(ValueDataset, self).__init__(examples, fields)
@@ -90,13 +91,13 @@ class ValueDataset(Dataset):
 
 
 class DictionaryDataset(Dataset):
-    """dict数据集用于SCST训练"""
+    """dict数据集用于SCST训练和各种分数测试"""
     def __init__(self, examples, fields, key_fields):
         if not isinstance(key_fields, (tuple, list)):
             key_fields = (key_fields,)
         for field in key_fields:
             assert (field in fields)
-
+        # 不存在key返回空列表
         dictionary = collections.defaultdict(list)
         key_fields = {k: fields[k] for k in key_fields}
         value_fields = {k: fields[k] for k in fields.keys() if k not in key_fields}
