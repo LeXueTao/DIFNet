@@ -22,11 +22,11 @@ class BeamSearch1(object):
         def fn(s):
             shape = [int(sh) for sh in s.shape]
             beam = selected_beam
-            for _ in shape[1:]:
+            for _ in shape[1:]: # t=0时刻, visiual: (1,5) -> (1, 5, 1, 1)
                 beam = beam.unsqueeze(-1)
             s = torch.gather(s.view(*([self.b_s, cur_beam_size] + shape[1:])), 1,
-                             beam.expand(*([self.b_s, self.beam_size] + shape[1:])))
-            s = s.view(*([-1, ] + shape[1:]))
+                             beam.expand(*([self.b_s, self.beam_size] + shape[1:]))) #t=0时刻，visiual: s相当于没有变化
+            s = s.view(*([-1, ] + shape[1:])) # t=0时刻, visiual:(1, 5 ,49, 512) -> (5, 49, 512)
             return s
 
         return fn
@@ -101,10 +101,10 @@ class BeamSearch1(object):
 
     def iter(self, t: int, visual: utils.TensorOrSequence, pixels: utils.TensorOrSequence, outputs, return_probs, **kwargs):
         cur_beam_size = 1 if t == 0 else self.beam_size
-
+        #(b_s, beam, 76), (1, 1, 76)
         word_logprob = self.model.step(t, self.selected_words, visual, pixels, None, mode='feedback', **kwargs)
         word_logprob = word_logprob.view(self.b_s, cur_beam_size, -1)
-        candidate_logprob = self.seq_logprob + word_logprob
+        candidate_logprob = self.seq_logprob + word_logprob # beam上的连续概率
 
         # Mask sequence if it reaches EOS
         if t > 0:
@@ -114,9 +114,9 @@ class BeamSearch1(object):
             old_seq_logprob = self.seq_logprob.expand_as(candidate_logprob).contiguous()
             old_seq_logprob[:, :, 1:] = -999
             candidate_logprob = self.seq_mask * candidate_logprob + old_seq_logprob * (1 - self.seq_mask)
-
+        # 从batch中所有预测的词选出最大的beam_size个
         selected_idx, selected_logprob = self.select(t, candidate_logprob, **kwargs)
-        # 防止预测大于的数字
+        # 防止预测大于字典总数的数字
         selected_beam = torch.div(selected_idx, candidate_logprob.shape[-1], rounding_mode='trunc')
         # selected_beam = selected_idx // candidate_logprob.shape[-1]
         selected_words = selected_idx - selected_beam * candidate_logprob.shape[-1]

@@ -60,25 +60,32 @@ class DifnetDecoder(Module):
     def forward(self, input, encoder_output, mask_encoder):
         # input (b_s, seq_len)
         b_s, seq_len = input.shape[:2]
-        mask_queries = (input != self.padding_idx).unsqueeze(-1).float()  # (b_s, seq_len, 1)
-        mask_self_attention = torch.triu(torch.ones((seq_len, seq_len), dtype=torch.uint8, device=input.device),
-                                         diagonal=1)
-        mask_self_attention = mask_self_attention.unsqueeze(0).unsqueeze(0)  # (1, 1, seq_len, seq_len)
+        # (b_s, seq_len, 1) 找到pad的位置开头/尾巴
+        mask_queries = (input != self.padding_idx).unsqueeze(-1).float()  
+        # (seq_len, seq_len)
+        mask_self_attention = torch.triu(torch.ones((seq_len, seq_len), dtype=torch.uint8, device=input.device),diagonal=1)
+        # (1, 1, seq_len, seq_len)
+        mask_self_attention = mask_self_attention.unsqueeze(0).unsqueeze(0)  
+        # (1, 1, seq_len, seq_len) + (b_s, 1, 1, seq_len)，针对将'<pad>'符号前置的情况，后置不会影响
         mask_self_attention = mask_self_attention + (input == self.padding_idx).unsqueeze(1).unsqueeze(1).byte()
-        mask_self_attention = mask_self_attention.gt(0)  # (b_s, 1, seq_len, seq_len)
-        if self._is_stateful:
+         # (b_s, 1, seq_len, seq_len)
+        mask_self_attention = mask_self_attention.gt(0) 
+        if self._is_stateful: # (1, 1, 1, 0)值是空的 (b_s, 1, seq_len, seq_len)
             self.running_mask_self_attention = torch.cat([self.running_mask_self_attention.type_as(mask_self_attention), mask_self_attention], -1)
             mask_self_attention = self.running_mask_self_attention
 
-        seq = torch.arange(1, seq_len + 1).view(1, -1).expand(b_s, -1).to(input.device)  # (b_s, seq_len)
+        # (b_s, seq_len), '<pad>'位置填入0
+        seq = torch.arange(1, seq_len + 1).view(1, -1).expand(b_s, -1).to(input.device)  
         seq = seq.masked_fill(mask_queries.squeeze(-1) == 0, 0)
         if self._is_stateful:
-            self.running_seq.add_(1)
+            self.running_seq.add_(1) # (1, 1) 0
             seq = self.running_seq
-
+        # seq是为了位置嵌入
         out = self.word_emb(input) + self.pos_emb(seq)
         
         for i, l in enumerate(self.layers):
+            # mask_queries限制q，可以将q加到k进一步限制
+            # mask_self_attention通过注意力矩阵赋值'-inf'限制k
             out = l(out, encoder_output, mask_queries, mask_self_attention, mask_encoder)
 
         out = self.fc(out)

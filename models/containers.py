@@ -26,9 +26,9 @@ class Module(nn.Module):
                 yield from m.states()
 
     def apply_to_states(self, fn):
-        for name in self._state_names:
+        for name in self._state_names: # transfomer带的，存储enc和enc_mask
             self._buffers[name] = fn(self._buffers[name])
-        for m in self.children():
+        for m in self.children(): # decoder中存在的，
             if isinstance(m, Module):
                 m.apply_to_states(fn)
 

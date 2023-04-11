@@ -265,7 +265,7 @@ class TextField(RawField):
             tok for tok in [self.unk_token, self.pad_token, self.init_token,
                             self.eos_token]
             if tok is not None]))
-        # 这里面特殊字符都给的0
+        # 4个特殊字符放在开头
         self.vocab = self.vocab_cls(counter, specials=specials, **kwargs)
 
     def pad(self, minibatch):

@@ -66,16 +66,17 @@ class Difnet(CaptioningModel1):
             raise NotImplementedError
         elif mode == 'feedback':
             if t == 0:
-                visual = self.embed_image(visual)
-                pixel = self.embed_pixel(pixel)
+                visual = self.embed_image(visual) # (b_s, 49, 512)
+                pixel = self.embed_pixel(pixel) 
                 self.enc_output, self.mask_enc = self.encoder(visual, pixel)
-                if isinstance(visual, torch.Tensor): # 第一波添加开始符号
+                if isinstance(visual, torch.Tensor): # 第一波给每个batch添加开始符号
                     it = visual.data.new_full((visual.shape[0], 1), self.bos_idx).long()
                 else:
                     it = visual[0].data.new_full((visual[0].shape[0], 1), self.bos_idx).long()
             else:
                 it = prev_output
-
+        # 这里的it是每次计算的序列
+        # self.enc_output和self.mask_enc每个时间步都会更新一次
         return self.decoder(it, self.enc_output, self.mask_enc)
 
 
