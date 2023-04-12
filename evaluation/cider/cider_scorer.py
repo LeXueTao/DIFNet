@@ -56,17 +56,17 @@ class CiderScorer(object):
         self.doc_frequency = defaultdict(float)
         self.ref_len = None
 
-        for k in refs.keys():
+        for k in refs.keys(): # 计算词语在当前句子的频率
             self.crefs.append(cook_refs(refs[k]))
             if test is not None:
-                self.ctest.append(cook_test(test[k][0]))  ## N.B.: -1
+                self.ctest.append(cook_test(test[k][0]))
             else:
                 self.ctest.append(None)  # lens of crefs and ctest have to match
 
         if doc_frequency is None and ref_len is None:
-            # compute idf
+            # 计算idf
             self.compute_doc_freq()
-            # compute log reference length
+            # 统计图片张数
             self.ref_len = np.log(float(len(self.crefs)))
         else:
             self.doc_frequency = doc_frequency
@@ -77,13 +77,12 @@ class CiderScorer(object):
         Compute term frequency for reference data.
         This will be used to compute idf (inverse document frequency later)
         The term frequency is stored in the object
-        :return: None
+        :return: None 
         '''
         for refs in self.crefs:
-            # refs, k ref captions of one image
+            # 计算词组在多少张照片中出现
             for ngram in set([ngram for ref in refs for (ngram,count) in ref.items()]):
                 self.doc_frequency[ngram] += 1
-            # maxcounts[ngram] = max(maxcounts.get(ngram,0), count)
 
     def compute_cider(self):
         def counts2vec(cnts):
@@ -102,14 +101,14 @@ class CiderScorer(object):
                 df = np.log(max(1.0, self.doc_frequency[ngram]))
                 # ngram index
                 n = len(ngram)-1
-                # tf (term_freq) * idf (precomputed idf) for n-grams
+                # tf (term_freq) * idf (precomputed idf) for n-grams 当前词语的idf
                 vec[n][ngram] = float(term_freq)*(self.ref_len - df)
-                # compute norm for the vector.  the norm will be used for computing similarity
+                # 每一个词语的平方和（向量的角度）
                 norm[n] += pow(vec[n][ngram], 2)
 
-                if n == 1:
+                if n == 1: # length：当前句所有2-gram词语的出现总数
                     length += term_freq
-            norm = [np.sqrt(n) for n in norm]
+            norm = [np.sqrt(n) for n in norm] # 开向量和根号
             return vec, norm, length
 
         def sim(vec_hyp, vec_ref, norm_hyp, norm_ref, length_hyp, length_ref):
@@ -123,31 +122,31 @@ class CiderScorer(object):
             :param length_ref: int containing length of reference
             :return: array of score for each n-grams cosine similarity
             '''
-            delta = float(length_hyp - length_ref)
+            delta = float(length_hyp - length_ref) # 以二元词组的个数差异做为惩罚项
             # measure consine similarity
             val = np.array([0.0 for _ in range(self.n)])
             for n in range(self.n):
                 # ngram
                 for (ngram,count) in vec_hyp[n].items():
-                    # vrama91 : added clipping
+                    # 不存在，字典查询返回0，
                     val[n] += min(vec_hyp[n][ngram], vec_ref[n][ngram]) * vec_ref[n][ngram]
-
+                # 长度为0就默认1
                 if (norm_hyp[n] != 0) and (norm_ref[n] != 0):
                     val[n] /= (norm_hyp[n]*norm_ref[n])
 
                 assert(not math.isnan(val[n]))
-                # vrama91: added a length based gaussian penalty
+                # 长度惩罚项
                 val[n] *= np.e**(-(delta**2)/(2*self.sigma**2))
             return val
 
         scores = []
         for test, refs in zip(self.ctest, self.crefs):
-            # compute vector for test captions
+            # candidate的tf-idf
             vec, norm, length = counts2vec(test)
             # compute vector for ref captions
             score = np.array([0.0 for _ in range(self.n)])
-            for ref in refs:
-                vec_ref, norm_ref, length_ref = counts2vec(ref)
+            for ref in refs: # 计算ref中tf-idf
+                vec_ref, norm_ref, length_ref = counts2vec(ref) 
                 score += sim(vec, vec_ref, norm, norm_ref, length, length_ref)
             # change by vrama91 - mean of ngram scores, instead of sum
             score_avg = np.mean(score)
