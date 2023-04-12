@@ -25,11 +25,11 @@ def my_lcs(string, sub):
 
     lengths = [[0 for i in range(0, len(sub) + 1)] for j in range(0, len(string) + 1)]
 
-    for j in range(1, len(sub) + 1):
+    for j in range(1, len(sub) + 1): #j是子句，i是主句
         for i in range(1, len(string) + 1):
-            if (string[i - 1] == sub[j - 1]):
+            if (string[i - 1] == sub[j - 1]): # 子句和主句匹配找上一轮匹配情况
                 lengths[i][j] = lengths[i - 1][j - 1] + 1
-            else:
+            else: # 子句主句未匹配，找最大值为了向后传递，画矩阵看就明白了，舍弃了前面小的错误的
                 lengths[i][j] = max(lengths[i - 1][j], lengths[i][j - 1])
 
     return lengths[len(string)][len(sub)]
@@ -57,7 +57,7 @@ class Rouge():
         prec = []
         rec = []
 
-        # split into tokens
+        # candidate split into tokens
         token_c = candidate[0].split(" ")
 
         for reference in refs:
