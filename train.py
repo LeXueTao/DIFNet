@@ -110,6 +110,7 @@ def train_xe(model, dataloader, optim, text_field):
 
 def train_scst(model, dataloader, optim, cider, text_field):
     # Training with self-critical
+    # 设置进程池，Pool()默认cpu个数
     tokenizer_pool = multiprocessing.Pool()
     running_reward = .0
     running_reward_baseline = .0
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
-    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
@@ -263,7 +264,8 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lambda_lr)
 
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
-    use_rl = False
+    #TODO: 控制是否跑scst
+    use_rl = True
     best_cider = .0
     patience = 0
     start_epoch = 0
@@ -296,6 +298,7 @@ if __name__ == '__main__':
     for e in range(start_epoch, start_epoch + 4):
         dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,drop_last=True)
         dataloader_val = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
+        # 这里是针对每张照片，每张照片在coco中有5个caption，所以batch_size默认除以5
         dict_dataloader_train = DataLoader(dict_dataset_train, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
         dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5)
         dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5)
