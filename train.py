@@ -265,7 +265,7 @@ if __name__ == '__main__':
 
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
     #TODO: 控制是否跑scst
-    use_rl = True
+    use_rl = False
     best_cider = .0
     patience = 0
     start_epoch = 0
@@ -357,7 +357,8 @@ if __name__ == '__main__':
             else:
                 print('patience reached.')
                 exit_train = True
-        #####
+
+        # 大于20epoch必定转向scst
         if not use_rl:
             if e >= 20:
                 use_rl = True
@@ -365,7 +366,7 @@ if __name__ == '__main__':
                 patience = 0
                 optim = Adam(model.parameters(), lr=5e-6)
                 print("Switching to RL")
-        #######
+        # 强化学习阶段，如果训练没有比上一个epoch好，就往回找最好的那一个
         if switch_to_rl and not best:
             data = torch.load(os.path.join(args.model_path, '%s_best.pth' % args.exp_name))
             torch.set_rng_state(data['torch_rng_state'])
@@ -376,6 +377,7 @@ if __name__ == '__main__':
             print('Resuming from epoch %d, validation loss %f, and best cider %f' % (
                 data['epoch'], data['val_loss'], data['best_cider']))
 
+        # 每一波都保存
         torch.save({
             'torch_rng_state': torch.get_rng_state(),
             'cuda_rng_state': torch.cuda.get_rng_state(),
@@ -392,6 +394,7 @@ if __name__ == '__main__':
             'use_rl': use_rl,
         }, os.path.join(args.model_path, '%s_last.pth' % args.exp_name))
 
+        # 保存最好的结果
         if best:
             copyfile(os.path.join(args.model_path, '%s_last.pth' % args.exp_name), os.path.join(args.model_path, '%s_best.pth' % args.exp_name))
         if exit_train:
