@@ -161,7 +161,7 @@ if __name__ == '__main__':
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
     parser.add_argument('--batch_size', type=int, default=10)
-    parser.add_argument('--workers', type=int, default=4)
+    parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
     parser.add_argument('--warmup', type=int, default=10000)

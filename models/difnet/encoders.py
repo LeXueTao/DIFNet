@@ -55,8 +55,8 @@ class MultiLevelEncoder(nn.Module):
         out = input
         out1 = pixel
 
-        for i, l in enumerate(self.layers): # 这里循环了两次
-            if i < self.Lf:
+        for i, l in enumerate(self.layers): 
+            if i < self.Lf:# IILN循环了两次
                 for t in range(self.T): # m的数值区分是grid还是seg，IILN里面有私有结构
                     out = l(out, out, out, attention_mask, attention_weights, m=0)
                     out1 = l(out1, out1, out1, pixel_attention_mask, attention_weights, m=1)
