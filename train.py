@@ -22,6 +22,9 @@ import itertools
 import multiprocessing
 from shutil import copyfile
 
+import time
+
+
 random.seed(1234)
 torch.manual_seed(1234)
 np.random.seed(1234)
@@ -82,12 +85,14 @@ def evaluate_metrics(model, dataloader, text_field):
 def train_xe(model, dataloader, optim, text_field):
     # Training with cross-entropy
     model.train()
-    # scheduler.step()
     running_loss = .0
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader)) as pbar:
         for it, (detections, captions, pixels) in enumerate(dataloader):
             detections, captions, pixels = detections.to(device), captions.to(device), pixels.to(device)
+            start = time.time()
             out = model(detections, captions, pixels)
+            end = time.time()
+            print('model_time:{}'.format(end-start))
             optim.zero_grad()
             captions_gt = captions[:, 1:].contiguous()
             out = out[:, :-1].contiguous()
@@ -100,7 +105,6 @@ def train_xe(model, dataloader, optim, text_field):
 
             pbar.set_postfix(avg_loss=running_loss / (it + 1))
             pbar.update()
-            scheduler.step()
             if test:
                 break
 
@@ -125,7 +129,7 @@ def train_scst(model, dataloader, optim, cider, text_field):
             pixels = pixels.to(device)
             outs, log_probs = model.beam_search(detections, pixels, seq_len, text_field.vocab.stoi['<eos>'],
                                                 beam_size, out_size=beam_size)
-            optim.zero_grad()
+            optim_rl.zero_grad()
 
             # Rewards
             caps_gen = text_field.decode(outs.view(-1, seq_len))
@@ -138,7 +142,7 @@ def train_scst(model, dataloader, optim, cider, text_field):
 
             loss = loss.mean()
             loss.backward()
-            optim.step()
+            optim_rl.step()
 
             running_loss += loss.item()
             running_reward += reward.mean().item()
@@ -160,11 +164,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
-    parser.add_argument('--batch_size', type=int, default=10)
+    parser.add_argument('--batch_size', type=int, default=50)
     parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
-    parser.add_argument('--warmup', type=int, default=10000)
     parser.add_argument('--resume_last', action='store_true')
     parser.add_argument('--resume_best', action='store_true')
     parser.add_argument('--features_path', type=str, default='./dataset/coco_grid_feats2.hdf5')
@@ -228,43 +231,39 @@ if __name__ == '__main__':
         model = Difnet_LRP(text_field.vocab.stoi['<bos>'], encoder, decoder).to(device)
 
 
-    '''
-    def lambda_lr(s):
-        warm_up = args.warmup
-        s += 1
-        return (model.d_model ** -.5) * min(s ** -.5, s * warm_up ** -1.5)
-    '''
 
     def lambda_lr(s):
         base_lr = 0.0001
-        print("s:", s)
         if s <= 3:
-            lr = base_lr * s / 4
+            lr = base_lr / 4
         elif s <= 10:
             lr = base_lr
         elif s <= 12:
             lr = base_lr * 0.2
         else:
             lr = base_lr * 0.2 * 0.2
+        
         return lr
 
     def lambda_lr_rl(s):
         base_lr = 5e-6
-        print("s:", s)
-        if s <= 29:
+        if s <= 9:
             lr = base_lr
-        elif s <= 31:
+        elif s <= 11:
             lr = base_lr * 0.2
         else:
             lr = base_lr * 0.2 * 0.2
         return lr
 
-    # Initial conditions
+    # 交叉熵训练
     optim = Adam(model.parameters(), lr=1, betas=(0.9, 0.98))
     scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lambda_lr)
 
+    # scst训练
+    optim_rl = Adam(model.parameters(), lr=1, betas=(0.9, 0.98))
+    scheduler_rl = torch.optim.lr_scheduler.LambdaLR(optim_rl, lambda_lr_rl)
+
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
-    #TODO: 控制是否跑scst
     use_rl = False
     best_cider = .0
     patience = 0
@@ -285,6 +284,7 @@ if __name__ == '__main__':
             model.load_state_dict(data['state_dict'], strict=False)
             optim.load_state_dict(data['optimizer'])
             scheduler.load_state_dict(data['scheduler'])
+            scheduler_rl.load_state_dict(data['scheduler_rl'])
             start_epoch = data['epoch'] + 1
             best_cider = data['best_cider']
             patience = data['patience']
@@ -295,7 +295,7 @@ if __name__ == '__main__':
             print('num_workers:', args.workers)
 
     print("Training starts")
-    for e in range(start_epoch, start_epoch + 4):
+    for e in range(start_epoch, start_epoch + 100):
         dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,drop_last=True)
         dataloader_val = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
         # 这里是针对每张照片，每张照片在coco中有5个caption，所以batch_size默认除以5
@@ -304,20 +304,32 @@ if __name__ == '__main__':
         dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5)
 
         if not use_rl:
+            print("epoch:{},\tlr:{}".format(e, scheduler.get_last_lr()))
             train_loss = train_xe(model, dataloader_train, optim, text_field)
+            scheduler.step()
             writer.add_scalar('data/train_loss', train_loss, e)
         else:
+            print("epoch:{},\tlr:{}".format(e, scheduler_rl.get_last_lr()))
             train_loss, reward, reward_baseline = train_scst(model, dict_dataloader_train, optim, cider_train, text_field)
+            scheduler_rl.step()
             writer.add_scalar('data/train_loss', train_loss, e)
             writer.add_scalar('data/reward', reward, e)
             writer.add_scalar('data/reward_baseline', reward_baseline, e)
 
+        
+
         # Validation loss
+        import time
+        val_loss_start = time.time()
         val_loss = evaluate_loss(model, dataloader_val, loss_fn, text_field)
+        val_loss_end = time.time()
         writer.add_scalar('data/val_loss', val_loss, e)
 
         # Validation scores
+        val_scor_start = time.time()
         scores = evaluate_metrics(model, dict_dataloader_val, text_field)
+        val_scor_end = time.time()
+        print("val_loss_time:{}, val_score_time:{}".format(val_loss_end-val_loss_start, val_scor_end-val_scor_start))
         print("Validation scores", scores)
         val_cider = scores['CIDEr']
         writer.add_scalar('data/val_cider', val_cider, e)
@@ -327,7 +339,10 @@ if __name__ == '__main__':
         writer.add_scalar('data/val_rouge', scores['ROUGE'], e)
 
         # Test scores
+        test_scor_start = time.time()
         scores = evaluate_metrics(model, dict_dataloader_test, text_field)
+        test_scor_end = time.time()
+        print("test_score_time:{}".format(test_scor_end-test_scor_start))
         print("Test scores", scores)
         test_cider = scores['CIDEr']
         writer.add_scalar('data/test_cider', test_cider, e)
@@ -389,6 +404,7 @@ if __name__ == '__main__':
             'state_dict': model.state_dict(),
             'optimizer': optim.state_dict(),
             'scheduler': scheduler.state_dict(),
+            'scheduler_rl': scheduler_rl.state_dict(),
             'patience': patience,
             'best_cider': best_cider,
             'use_rl': use_rl,

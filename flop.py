@@ -1,9 +1,7 @@
 import torch
 import pickle
 from data import ImageDetectionsField, TextField, RawField, PixelField
-from thop import profile, clever_format
-from torchstat import stat
-from fvcore.nn.flop_count import flop_count
+# from fvcore.nn.flop_count import flop_count
 
 import argparse
 from models.transformer import TransformerEncoder, TransformerDecoder, ScaledDotProductAttention, Transformer
@@ -48,10 +46,12 @@ input_c = torch.randint(1000, (1, 10)).long()
 input_d1 = torch.randn(1, 133, 7, 7)
 # input_d2 = torch.randn(1, 49, 64)
 # stat(net, (input_v, input_c, input_d1))
-flops, params = profile(net, (input_v, input_c, input_d1))
-gflop_dict, _ = flop_count(model, (input_v, input_c, input_d1))
-gflops = sum(gflop_dict.values())
-print(gflops)
+
+# 下面三行！！
+# flops, params = profile(net, (input_v, input_c, input_d1))
+# gflop_dict, _ = flop_count(model, (input_v, input_c, input_d1))
+# gflops = sum(gflop_dict.values())
+# print(gflops)
 
 # flops, params = clever_format([flops, params], '%.6f')
 # print('flops: ', flops, 'params: ', params)

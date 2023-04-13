@@ -7,6 +7,7 @@ from .example import Example
 from .utils import nostdout
 from pycocotools.coco import COCO as pyCOCO
 import json
+import time
 
 
 class Dataset(object):
@@ -16,6 +17,7 @@ class Dataset(object):
 
     def collate_fn(self):
         def collate(batch):
+            # cpu_time_start = time.time()
             if len(self.fields) == 1:
                 batch = [batch, ]
             else: # 图片和图片放一起，文字和文字放一起
@@ -28,6 +30,8 @@ class Dataset(object):
                     tensors.extend(tensor)
                 else:
                     tensors.append(tensor)
+            # cpu_time_end = time.time()
+            # print("collate_time:{}".format(cpu_time_end- cpu_time_start))
             # 返回List，里面是3个类型，(batch_size, dim)
             if len(tensors) > 1:
                 return tensors
@@ -256,7 +260,7 @@ class COCO(PairedDataset):
             else:
                 beakpoint = len(ids)
 
-            #TODO: for index in range(len(ids)):
+            #for index in range(len(ids)):
             for index in range(len(ids)):
                 if index < beakpoint:
                     coco = coco_dataset[0]
