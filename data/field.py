@@ -112,18 +112,30 @@ class ImageDetectionsField(RawField):
     def preprocess(self, x, avoid_precomp=False):
         start_time = time.time()
         image_id = int(x.split('_')[-1].split('.')[0])
-        try:
-            f = h5py.File(self.detections_path, 'r')
-            # 上面这句原始的代码，有错误，应该是测试图片时使用的
-            # precomp_data = f['%d_features' % image_id][()]
-            precomp_data = f['%d_grids' % image_id][()]
-            end_time = time.time()
-            if self.sort_by_prob:# 训练阶段加载不了这个
-                precomp_data = precomp_data[np.argsort(np.max(f['%d_cls_prob' % image_id][()], -1))[::-1]]
-        except KeyError:
-            warnings.warn('Could not find detections for %d' % image_id)
-            precomp_data = np.random.rand(10,2048)
+        image_root_train = "./dataset/coco2014_gridfeats/X101_train/"
+        image_root_val = "./dataset/coco2014_gridfeats/X101_val/"
+        image_path_train = image_root_train + str(image_id)
+        image_path_val = image_root_val + str(image_id)
+        # try:
+            # f = h5py.File(self.detections_path, 'r')
+            # # 上面这句原始的代码，有错误，应该是测试图片时使用的
+            # # precomp_data = f['%d_features' % image_id][()]
+            # precomp_data = f['%d_grids' % image_id][()]
 
+        #     end_time = time.time()
+        #     if self.sort_by_prob:# 训练阶段加载不了这个
+        #         precomp_data = precomp_data[np.argsort(np.max(f['%d_cls_prob' % image_id][()], -1))[::-1]]
+        # except KeyError:
+        #     warnings.warn('Could not find detections for %d' % image_id)
+        #     precomp_data = np.random.rand(10,2048)
+        # 这里由于数据分别存在val和train，而又要统一加载
+        if os.path.exists(image_path_train):
+            precomp_data = np.load(image_path_train)
+        elif os.path.exists(image_path_val):
+            precomp_data = np.load(image_path_train)
+        else:
+            warnings.warn('image no exists!!!')
+        end_time = time.time()
 
         start_time1 = time.time()
         # 这里设置的大小是7*7=49的大小
