@@ -43,9 +43,14 @@ class Dataset(object):
     def __getitem__(self, i):
         example = self.examples[i]
         data = []
+        start_time = time.time()
         for field_name, field in self.fields.items():
+            start_time_1 = time.time()
             data.append(field.preprocess(getattr(example, field_name)))
-
+            end_time_1 = time.time()
+            # print(field_name+"_time:{}".format(start_time_1-end_time_1))
+        end_time = time.time()
+        # print("data_item:{}".format(end_time-start_time))
         if len(data) == 1: # 兼容性
             data = data[0]
         return data

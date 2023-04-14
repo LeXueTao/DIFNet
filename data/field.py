@@ -110,25 +110,35 @@ class ImageDetectionsField(RawField):
         super(ImageDetectionsField, self).__init__(preprocessing, postprocessing)
 
     def preprocess(self, x, avoid_precomp=False):
+        start_time = time.time()
         image_id = int(x.split('_')[-1].split('.')[0])
         try:
             f = h5py.File(self.detections_path, 'r')
             # 上面这句原始的代码，有错误，应该是测试图片时使用的
             # precomp_data = f['%d_features' % image_id][()]
             precomp_data = f['%d_grids' % image_id][()]
+            end_time = time.time()
             if self.sort_by_prob:# 训练阶段加载不了这个
                 precomp_data = precomp_data[np.argsort(np.max(f['%d_cls_prob' % image_id][()], -1))[::-1]]
         except KeyError:
             warnings.warn('Could not find detections for %d' % image_id)
             precomp_data = np.random.rand(10,2048)
+
+
+        start_time1 = time.time()
         # 这里设置的大小是7*7=49的大小
         delta = self.max_detections - precomp_data.shape[0]
         if delta > 0:# 如果没有这张图片，前半部分随机数，后面再补0
             precomp_data = np.concatenate([precomp_data, np.zeros((delta, precomp_data.shape[1]))], axis=0)
-        elif delta < 0:# 如果过长直接阶段
+        elif delta < 0:# 如果过长直接截断
             precomp_data = precomp_data[:self.max_detections]
+        precomp_data = precomp_data.astype(np.float32)
+        end_time1 = time.time()
+        # print("image_time_1:{},  image_time_2:{}".format(end_time-start_time, end_time1-start_time1))
 
-        return precomp_data.astype(np.float32)
+
+
+        return precomp_data
 
  
 class ImageDetectionsField152(RawField):

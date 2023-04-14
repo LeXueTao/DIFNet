@@ -89,10 +89,8 @@ def train_xe(model, dataloader, optim, text_field):
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader)) as pbar:
         for it, (detections, captions, pixels) in enumerate(dataloader):
             detections, captions, pixels = detections.to(device), captions.to(device), pixels.to(device)
-            start = time.time()
             out = model(detections, captions, pixels)
-            end = time.time()
-            print('model_time:{}'.format(end-start))
+            start_time = time.time()
             optim.zero_grad()
             captions_gt = captions[:, 1:].contiguous()
             out = out[:, :-1].contiguous()
@@ -105,6 +103,10 @@ def train_xe(model, dataloader, optim, text_field):
 
             pbar.set_postfix(avg_loss=running_loss / (it + 1))
             pbar.update()
+
+            end_time = time.time()
+            print("loss_time:{}".format(end_time-start_time))
+
             if test:
                 break
 
@@ -205,12 +207,13 @@ if __name__ == '__main__':
         text_field.vocab = pickle.load(open('vocab.pkl', 'rb'))
 
 
-        
+    #TODO: 这里太慢了！！将近40s
     dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
     ref_caps_train = list(train_dataset.text)
     cider_train = Cider(PTBTokenizer.tokenize(ref_caps_train))
     dict_dataset_val = val_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
-    dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})    
+    dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
+
 
     # Model and dataloaders
     if args.mode == 'base':
@@ -296,7 +299,7 @@ if __name__ == '__main__':
 
     print("Training starts")
     for e in range(start_epoch, start_epoch + 100):
-        dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,drop_last=True)
+        dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,drop_last=True, pin_memory=True)
         dataloader_val = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
         # 这里是针对每张照片，每张照片在coco中有5个caption，所以batch_size默认除以5
         dict_dataloader_train = DataLoader(dict_dataset_train, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
@@ -329,7 +332,7 @@ if __name__ == '__main__':
         val_scor_start = time.time()
         scores = evaluate_metrics(model, dict_dataloader_val, text_field)
         val_scor_end = time.time()
-        print("val_loss_time:{}, val_score_time:{}".format(val_loss_end-val_loss_start, val_scor_end-val_scor_start))
+        # print("val_loss_time:{}, val_score_time:{}".format(val_loss_end-val_loss_start, val_scor_end-val_scor_start))
         print("Validation scores", scores)
         val_cider = scores['CIDEr']
         writer.add_scalar('data/val_cider', val_cider, e)
@@ -342,7 +345,7 @@ if __name__ == '__main__':
         test_scor_start = time.time()
         scores = evaluate_metrics(model, dict_dataloader_test, text_field)
         test_scor_end = time.time()
-        print("test_score_time:{}".format(test_scor_end-test_scor_start))
+        # print("test_score_time:{}".format(test_scor_end-test_scor_start))
         print("Test scores", scores)
         test_cider = scores['CIDEr']
         writer.add_scalar('data/test_cider', test_cider, e)
