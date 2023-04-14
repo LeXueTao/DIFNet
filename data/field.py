@@ -135,6 +135,7 @@ class ImageDetectionsField(RawField):
             precomp_data = np.load(image_path_train)
         else:
             warnings.warn('image no exists!!!')
+            precomp_data = np.random.rand(10,2048)
         end_time = time.time()
 
         start_time1 = time.time()

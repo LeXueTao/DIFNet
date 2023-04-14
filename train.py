@@ -105,7 +105,7 @@ def train_xe(model, dataloader, optim, text_field):
             pbar.update()
 
             end_time = time.time()
-            print("loss_time:{}".format(end_time-start_time))
+            # print("loss_time:{}".format(end_time-start_time))
 
             if test:
                 break
