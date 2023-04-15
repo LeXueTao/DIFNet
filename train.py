@@ -162,23 +162,23 @@ def train_scst(model, dataloader, optim, cider, text_field):
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda')
+    device = torch.device('cuda:0')
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
-    parser.add_argument('--batch_size', type=int, default=50)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
     parser.add_argument('--resume_last', action='store_true')
     parser.add_argument('--resume_best', action='store_true')
-    parser.add_argument('--features_path', type=str, default='./dataset/coco_grid_feats2.hdf5')
+    parser.add_argument('--features_path', type=str, default='./dataset/coco2014_gridfeats')
     parser.add_argument('--pixel_path', type=str, default='./dataset/segmentations')
     parser.add_argument('--annotation_folder', type=str, default='./dataset/coco2014/annotations')
     parser.add_argument('--logs_folder', type=str, default='./output/tensorboard_logs')
     parser.add_argument('--model_path', type=str, default='./output/saved_transformer_models')
 
-    parser.add_argument('--mode', type=str, default='base', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
+    parser.add_argument('--mode', type=str, default='difnet', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
     args = parser.parse_args()
     print(args)
 

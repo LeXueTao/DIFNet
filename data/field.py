@@ -93,20 +93,6 @@ class ImageDetectionsField(RawField):
         self.detections_path = detections_path
         self.sort_by_prob = sort_by_prob
 
-        tmp_detections_path = os.path.join('/tmp', os.path.basename(detections_path))
-
-        if load_in_tmp:
-            if not os.path.isfile(tmp_detections_path):
-                if shutil.disk_usage("/tmp")[-1] < os.path.getsize(detections_path):
-                    warnings.warn('Loading from %s, because /tmp has no enough space.' % detections_path)
-                else:
-                    warnings.warn("Copying detection file to /tmp")
-                    shutil.copyfile(detections_path, tmp_detections_path)
-                    warnings.warn("Done.")
-                    self.detections_path = tmp_detections_path
-            else:
-                self.detections_path = tmp_detections_path
-
         super(ImageDetectionsField, self).__init__(preprocessing, postprocessing)
 
     def preprocess(self, x, avoid_precomp=False):
@@ -114,30 +100,18 @@ class ImageDetectionsField(RawField):
         image_id = int(x.split('_')[-1].split('.')[0])
         image_root_train = "./dataset/coco2014_gridfeats/X101_train/"
         image_root_val = "./dataset/coco2014_gridfeats/X101_val/"
-        image_path_train = image_root_train + str(image_id)
-        image_path_val = image_root_val + str(image_id)
-        # try:
-            # f = h5py.File(self.detections_path, 'r')
-            # # 上面这句原始的代码，有错误，应该是测试图片时使用的
-            # # precomp_data = f['%d_features' % image_id][()]
-            # precomp_data = f['%d_grids' % image_id][()]
-
-        #     end_time = time.time()
-        #     if self.sort_by_prob:# 训练阶段加载不了这个
-        #         precomp_data = precomp_data[np.argsort(np.max(f['%d_cls_prob' % image_id][()], -1))[::-1]]
-        # except KeyError:
-        #     warnings.warn('Could not find detections for %d' % image_id)
-        #     precomp_data = np.random.rand(10,2048)
+        image_path_train = image_root_train + str(image_id) + '.npy'
+        image_path_val = image_root_val + str(image_id)+ '.npy'
         # 这里由于数据分别存在val和train，而又要统一加载
-        if os.path.exists(image_path_train):
+        if 'train' in x:
             precomp_data = np.load(image_path_train)
-        elif os.path.exists(image_path_val):
-            precomp_data = np.load(image_path_train)
+        elif 'val' in x:
+            precomp_data = np.load(image_path_val)
         else:
             warnings.warn('image no exists!!!')
             precomp_data = np.random.rand(10,2048)
         end_time = time.time()
-
+        # print('load_image_time:{}'.format(end_time-start_time))
         start_time1 = time.time()
         # 这里设置的大小是7*7=49的大小
         delta = self.max_detections - precomp_data.shape[0]
@@ -148,8 +122,6 @@ class ImageDetectionsField(RawField):
         precomp_data = precomp_data.astype(np.float32)
         end_time1 = time.time()
         # print("image_time_1:{},  image_time_2:{}".format(end_time-start_time, end_time1-start_time1))
-
-
 
         return precomp_data
 
