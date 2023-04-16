@@ -228,72 +228,48 @@ class COCO(PairedDataset):
 
     @classmethod
     def get_samples(cls, roots, ids_dataset=None):
+        all_samples = []
         train_samples = []
         val_samples = []
         test_samples = []
 
         # 虽然开头给test的地址是val的地址
-        # 这里按照严格划分
+        # 按照karpathy划分
+        # val:5000
+        # test: 5000
+        # train: 余下全部
         
         # 加载coco_ann
         coco_train = pyCOCO(roots['train']['cap'])
         root_train = roots['train']['img']
+        ann_ids_train = list(coco_train.anns.keys())
         coco_val = pyCOCO(roots['val']['cap'])
         root_val = roots['val']['img']
+        ann_ids_val = list(coco_val.anns.keys())
 
-        ann_ids: list = []
-        ann_ids = list(coco_train.anns.keys()) + list(coco_val.anns.keys())
-        # 随机打乱
-        ann_ids = random.shuffle(ann_ids)
+        # 取训练集数据
+        for index in ann_ids_train:
+            caption = coco_train.anns[index]['caption']
+            img_id = coco_train.anns[index]['image_id']
+            filename = coco_train.loadImgs(img_id)[0]['file_name']
+            # 生成一个类，类属性是这三个东西
+            example = Example.fromdict({'image': os.path.join( root_train, filename), 'text': caption, 'pixel': os.path.join( root_train, filename)})
+            all_samples.append(example)
         
+        # 取测试集集数据
+        for index in ann_ids_val:
+            caption = coco_val.anns[index]['caption']
+            img_id = coco_val.anns[index]['image_id']
+            filename = coco_val.loadImgs(img_id)[0]['file_name']
+            # 生成一个类，类属性是这三个东西
+            example = Example.fromdict({'image': os.path.join(root_val, filename), 'text': caption, 'pixel': os.path.join(root_val, filename)})
+            all_samples.append(example)
 
-
-
-        for split in ['train', 'val', 'test']:
-            # 生成coco数据集
-            if isinstance(roots[split]['cap'], tuple):
-                coco_dataset = (pyCOCO(roots[split]['cap'][0]), pyCOCO(roots[split]['cap'][1]))
-                root = roots[split]['img']
-            else:
-                coco_dataset = (pyCOCO(roots[split]['cap']),)
-                root = (roots[split]['img'],)
-            if ids_dataset is None:
-                # ids：是总共有哪些id
-                # ids = list(coco_dataset[0].anns.keys())
-                ids: list = []
-                for i in range(len(coco_dataset)):
-                    ids += coco_dataset[i].anns.keys()
-            else:
-                ids = ids_dataset[split]
-
-            if isinstance(ids, tuple):
-                beakpoint = len(ids[0])
-                ids = list(ids[0]) + list(ids[1])
-            else:
-                beakpoint = len(ids)
-
-            #for index in range(len(ids)):
-            for index in range(len(ids)):
-                if index < beakpoint:
-                    coco = coco_dataset[0]
-                    img_root = root[0]
-                else:
-                    coco = coco_dataset[1]
-                    img_root = root[1]
-
-                ann_id = ids[index]
-                caption = coco.anns[ann_id]['caption']
-                img_id = coco.anns[ann_id]['image_id']
-                filename = coco.loadImgs(img_id)[0]['file_name']
-                # 生成一个类，类属性是这三个东西
-                example = Example.fromdict({'image': os.path.join(img_root, filename), 'text': caption, 'pixel': os.path.join(img_root, filename)})
-
-                if split == 'train':
-                    train_samples.append(example)
-                elif split == 'val':
-                    val_samples.append(example)
-                elif split == 'test':
-                    test_samples.append(example)
+        # 打乱数据
+        all_samples = random.shuffle(all_samples)
+        val_samples = all_samples[0:5000]
+        test_samples = all_samples[5000:10000]
+        train_samples = all_samples[10000:]        
 
         return train_samples, val_samples, test_samples
 
