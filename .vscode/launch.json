@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "env": {"CUDA_VISIBLE_DEVICES": "0"},
+            // "env": {"CUDA_VISIBLE_DEVICES": "3"},
             "console": "integratedTerminal",
             "justMyCode": true,
             // 训练
