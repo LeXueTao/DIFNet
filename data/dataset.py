@@ -266,7 +266,7 @@ class COCO(PairedDataset):
             all_samples.append(example)
 
         # 打乱数据
-        all_samples = random.shuffle(all_samples)
+        random.shuffle(all_samples)
         val_samples = all_samples[0:5000]
         test_samples = all_samples[5000:10000]
         train_samples = all_samples[10000:]        
