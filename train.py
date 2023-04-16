@@ -303,8 +303,8 @@ if __name__ == '__main__':
         dataloader_val = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
         # 这里是针对每张照片，每张照片在coco中有5个caption，所以batch_size默认除以5
         dict_dataloader_train = DataLoader(dict_dataset_train, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
-        dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5)
-        dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5)
+        dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
+        dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
 
         if not use_rl:
             print("epoch:{},\tlr:{}".format(e, scheduler.get_last_lr()))
