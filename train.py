@@ -129,19 +129,24 @@ def train_scst(model, dataloader, optim, cider, text_field):
         for it, ((detections, pixels), caps_gt) in enumerate(dataloader):
             detections = detections.to(device)
             pixels = pixels.to(device)
+            beam_time1 = time.time()
             outs, log_probs = model.beam_search(detections, pixels, seq_len, text_field.vocab.stoi['<eos>'],
                                                 beam_size, out_size=beam_size)
             optim_rl.zero_grad()
-
+            beam_time2 = time.time()
             # Rewards
+            reward_time1 = time.time()
             caps_gen = text_field.decode(outs.view(-1, seq_len))
             caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
+            reward_time2 = time.time()
             reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
+            
             reward = torch.from_numpy(reward).to(device).view(detections.shape[0], beam_size)
             reward_baseline = torch.mean(reward, -1, keepdim=True)
             loss = -torch.mean(log_probs, -1) * (reward - reward_baseline)
-
+            
+            print("beam_time:{},\treward_time:{}".format(beam_time2-beam_time1, reward_time2-reward_time1))
             loss = loss.mean()
             loss.backward()
             optim_rl.step()
@@ -209,8 +214,6 @@ if __name__ == '__main__':
 
     #TODO: 这里太慢了！！将近40s
     dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
-    ref_caps_train = list(train_dataset.text)
-    cider_train = Cider(PTBTokenizer.tokenize(ref_caps_train))
     dict_dataset_val = val_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
     dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
 
@@ -236,11 +239,11 @@ if __name__ == '__main__':
 
 
     def lambda_lr(s):
-        base_lr = 0.0001
+        base_lr = 0.001
         if s <= 3:
-            lr = base_lr / 4
+            lr = base_lr 
         elif s <= 10:
-            lr = base_lr
+            lr = base_lr /4
         elif s <= 12:
             lr = base_lr * 0.2
         else:
@@ -249,7 +252,7 @@ if __name__ == '__main__':
         return lr
 
     def lambda_lr_rl(s):
-        base_lr = 5e-6
+        base_lr = 5e-5
         if s <= 9:
             lr = base_lr
         elif s <= 11:
@@ -267,7 +270,7 @@ if __name__ == '__main__':
     scheduler_rl = torch.optim.lr_scheduler.LambdaLR(optim_rl, lambda_lr_rl)
 
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
-    use_rl = False
+    use_rl = True
     best_cider = .0
     patience = 0
     start_epoch = 0
@@ -297,6 +300,10 @@ if __name__ == '__main__':
             print('patience:', data['patience'])
             print('num_workers:', args.workers)
 
+    ref_caps_train = list(train_dataset.text)
+    cider_train = Cider(PTBTokenizer.tokenize(ref_caps_train))
+
+
     print("Training starts")
     for e in range(start_epoch, start_epoch + 100):
         dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,drop_last=True, pin_memory=True)
@@ -319,7 +326,7 @@ if __name__ == '__main__':
             writer.add_scalar('data/reward', reward, e)
             writer.add_scalar('data/reward_baseline', reward_baseline, e)
 
-        
+       
 
         # Validation loss
         import time
@@ -384,7 +391,7 @@ if __name__ == '__main__':
                 patience = 0
                 optim = Adam(model.parameters(), lr=5e-6)
                 print("Switching to RL")
-        # 强化学习阶段，如果训练没有比上一个epoch好，就往回找最好的那一个
+        # 刚到强化学习阶段，找最好的那个加载
         if switch_to_rl and not best:
             data = torch.load(os.path.join(args.model_path, '%s_best.pth' % args.exp_name))
             torch.set_rng_state(data['torch_rng_state'])
