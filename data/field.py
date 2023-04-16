@@ -5,7 +5,6 @@ from itertools import chain
 import six
 import torch
 import numpy as np
-import cv2
 import h5py
 import os
 import warnings
@@ -97,8 +96,8 @@ class ImageDetectionsField(RawField):
     def preprocess(self, x, avoid_precomp=False):
         start_time = time.time()
         image_id = int(x.split('_')[-1].split('.')[0])
-        image_root_train = "./dataset/coco2014_gridfeats/X101_train/"
-        image_root_val = "./dataset/coco2014_gridfeats/X101_val/"
+        image_root_train = "./datasets/coco2014_gridfeats/X101_train/"
+        image_root_val = "./datasets/coco2014_gridfeats/X101_val/"
         image_path_train = image_root_train + str(image_id) + '.npy'
         image_path_val = image_root_val + str(image_id)+ '.npy'
         # 这里由于数据分别存在val和train，而又要统一加载

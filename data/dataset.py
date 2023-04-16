@@ -8,13 +8,14 @@ from .utils import nostdout
 from pycocotools.coco import COCO as pyCOCO
 import json
 import time
+import random
 
 
 class Dataset(object):
     def __init__(self, examples, fields):
         self.examples = examples
         self.fields = dict(fields)
-
+        
     def collate_fn(self):
         def collate(batch):
             # cpu_time_start = time.time()
@@ -210,18 +211,8 @@ class COCO(PairedDataset):
             'img': os.path.join(img_root, 'val2014'),
             'cap': os.path.join(ann_root, 'captions_val2014.json')
         }
-        # karpathy split
-        roots['test'] = {
-            'img': os.path.join(img_root, 'val2014'),
-            'cap': os.path.join(ann_root, 'captions_val2014.json')
-        }
-        roots['trainrestval'] = {
-            'img': (roots['train']['img'], roots['val']['img']),
-            'cap': (roots['train']['cap'], roots['val']['cap'])
-        }
 
 
-        #TODO: 无用代码
         ids = None
         with nostdout():
             self.train_examples, self.val_examples, self.test_examples = self.get_samples(roots, ids)
@@ -241,6 +232,23 @@ class COCO(PairedDataset):
         val_samples = []
         test_samples = []
 
+        # 虽然开头给test的地址是val的地址
+        # 这里按照严格划分
+        
+        # 加载coco_ann
+        coco_train = pyCOCO(roots['train']['cap'])
+        root_train = roots['train']['img']
+        coco_val = pyCOCO(roots['val']['cap'])
+        root_val = roots['val']['img']
+
+        ann_ids: list = []
+        ann_ids = list(coco_train.anns.keys()) + list(coco_val.anns.keys())
+        # 随机打乱
+        ann_ids = random.shuffle(ann_ids)
+        
+
+
+
         for split in ['train', 'val', 'test']:
             # 生成coco数据集
             if isinstance(roots[split]['cap'], tuple):
@@ -249,7 +257,6 @@ class COCO(PairedDataset):
             else:
                 coco_dataset = (pyCOCO(roots[split]['cap']),)
                 root = (roots[split]['img'],)
-            #TODO: 有bug，加上coco_dataset[0]
             if ids_dataset is None:
                 # ids：是总共有哪些id
                 # ids = list(coco_dataset[0].anns.keys())
