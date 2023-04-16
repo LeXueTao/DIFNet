@@ -16,7 +16,6 @@ import time
 from .dataset import Dataset
 from .vocab import Vocab
 from .utils import get_tokenizer
-from pycocotools.mask import decode as mask_decode
 from torchvision.transforms import ToTensor
 
 
