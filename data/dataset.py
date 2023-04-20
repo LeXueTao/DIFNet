@@ -73,9 +73,9 @@ class ValueDataset(Dataset):
 
     def collate_fn(self):
         def collate(batch):
-            value_batch_flattened = list(itertools.chain(*batch))
+            value_batch_flattened = list(itertools.chain(*batch)) # 一开始是个tuple
             value_tensors_flattened = super(ValueDataset, self).collate_fn()(value_batch_flattened)
-
+            # 生成整体句子长度
             lengths = [0, ] + list(itertools.accumulate([len(x) for x in batch]))
             if isinstance(value_tensors_flattened, collections.Sequence) \
                     and any(isinstance(t, torch.Tensor) for t in value_tensors_flattened):
@@ -123,7 +123,7 @@ class DictionaryDataset(Dataset):
                 key_examples.append(key_example)
 
             value_examples.append(value_example)
-            dictionary[key_dict[key_example]].append(i)
+            dictionary[key_dict[key_example]].append(i) # 同照片就会记录多个i号，i号指向value中的序号
 
         self.key_dataset = Dataset(key_examples, key_fields)
         self.value_dataset = ValueDataset(value_examples, value_fields, dictionary)
@@ -247,14 +247,15 @@ class COCO(PairedDataset):
         root_val = roots['val']['img']
         ann_ids_val = list(coco_val.anns.keys())
 
+        #TODO:得改！！！！
         # 取训练集数据
-        for index in ann_ids_train:
-            caption = coco_train.anns[index]['caption']
-            img_id = coco_train.anns[index]['image_id']
-            filename = coco_train.loadImgs(img_id)[0]['file_name']
-            # 生成一个类，类属性是这三个东西
-            example = Example.fromdict({'image': os.path.join( root_train, filename), 'text': caption, 'pixel': os.path.join( root_train, filename)})
-            all_samples.append(example)
+        # for index in ann_ids_train:
+        #     caption = coco_train.anns[index]['caption']
+        #     img_id = coco_train.anns[index]['image_id']
+        #     filename = coco_train.loadImgs(img_id)[0]['file_name']
+        #     # 生成一个类，类属性是这三个东西
+        #     example = Example.fromdict({'image': os.path.join( root_train, filename), 'text': caption, 'pixel': os.path.join( root_train, filename)})
+        #     all_samples.append(example)
         
         # 取测试集集数据
         for index in ann_ids_val:
@@ -267,6 +268,8 @@ class COCO(PairedDataset):
 
         # 打乱数据
         random.shuffle(all_samples)
+        all_samples = all_samples[:15000]
+        #TODO: 得改！！！
         val_samples = all_samples[0:5000]
         test_samples = all_samples[5000:10000]
         train_samples = all_samples[10000:]        

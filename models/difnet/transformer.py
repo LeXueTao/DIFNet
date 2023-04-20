@@ -65,11 +65,11 @@ class Difnet(CaptioningModel1):
         if mode == 'teacher_forcing':
             raise NotImplementedError
         elif mode == 'feedback':
-            if t == 0:
+            if t == 0: # 第一波得先编码
                 visual = self.embed_image(visual) # (b_s, 49, 512)
                 pixel = self.embed_pixel(pixel) 
                 self.enc_output, self.mask_enc = self.encoder(visual, pixel)
-                if isinstance(visual, torch.Tensor): # 第一波给每个batch添加开始符号
+                if isinstance(visual, torch.Tensor): # 生成以bos_ids填充的(b_s, 1)的矩阵
                     it = visual.data.new_full((visual.shape[0], 1), self.bos_idx).long()
                 else:
                     it = visual[0].data.new_full((visual[0].shape[0], 1), self.bos_idx).long()

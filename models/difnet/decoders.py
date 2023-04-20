@@ -63,7 +63,7 @@ class DifnetDecoder(Module):
         # (b_s, seq_len, 1) 找到pad的位置开头/尾巴
         mask_queries = (input != self.padding_idx).unsqueeze(-1).float()  
         # (seq_len, seq_len)
-        mask_self_attention = torch.triu(torch.ones((seq_len, seq_len), dtype=torch.uint8, device=input.device),diagonal=1)
+        mask_self_attention = torch.triu(torch.ones((seq_len, seq_len), dtype=torch.uint8, device=input.device), diagonal=1)
         # (1, 1, seq_len, seq_len)
         mask_self_attention = mask_self_attention.unsqueeze(0).unsqueeze(0)  
         # (1, 1, seq_len, seq_len) + (b_s, 1, 1, seq_len)，针对将'<pad>'符号前置的情况，后置不会影响

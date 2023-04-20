@@ -89,7 +89,10 @@ def train_xe(model, dataloader, optim, text_field):
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader)) as pbar:
         for it, (detections, captions, pixels) in enumerate(dataloader):
             detections, captions, pixels = detections.to(device), captions.to(device), pixels.to(device)
+            time1 = time.time()
             out = model(detections, captions, pixels)
+            time2 = time.time()
+            print('tt:{}'.format(time2 - time1))
             start_time = time.time()
             optim.zero_grad()
             captions_gt = captions[:, 1:].contiguous()
@@ -117,7 +120,7 @@ def train_xe(model, dataloader, optim, text_field):
 def train_scst(model, dataloader, optim, cider, text_field):
     # Training with self-critical
     # 设置进程池，Pool()默认cpu个数
-    tokenizer_pool = multiprocessing.Pool()
+    tokenizer_pool = multiprocessing.Pool(processes=3)
     running_reward = .0
     running_reward_baseline = .0
     model.train()
@@ -136,8 +139,8 @@ def train_scst(model, dataloader, optim, cider, text_field):
             beam_time2 = time.time()
             # Rewards
             reward_time1 = time.time()
-            caps_gen = text_field.decode(outs.view(-1, seq_len))
-            caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
+            caps_gen = text_field.decode(outs.view(-1, seq_len)) #[str]
+            caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt))) # [[str1, str2,,,],,]
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
             reward_time2 = time.time()
             reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
@@ -167,11 +170,11 @@ def train_scst(model, dataloader, optim, cider, text_field):
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda:3')
+    device = torch.device('cuda:1')
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
-    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
@@ -270,7 +273,7 @@ if __name__ == '__main__':
     scheduler_rl = torch.optim.lr_scheduler.LambdaLR(optim_rl, lambda_lr_rl)
 
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
-    use_rl = True
+    use_rl = False
     best_cider = .0
     patience = 0
     start_epoch = 0
@@ -299,7 +302,7 @@ if __name__ == '__main__':
                 data['epoch'], data['val_loss'], data['best_cider']))
             print('patience:', data['patience'])
             print('num_workers:', args.workers)
-
+    #TODO: 这里！！！
     ref_caps_train = list(train_dataset.text)
     cider_train = Cider(PTBTokenizer.tokenize(ref_caps_train))
 

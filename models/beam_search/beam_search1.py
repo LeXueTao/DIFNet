@@ -101,7 +101,7 @@ class BeamSearch1(object):
 
     def iter(self, t: int, visual: utils.TensorOrSequence, pixels: utils.TensorOrSequence, outputs, return_probs, **kwargs):
         cur_beam_size = 1 if t == 0 else self.beam_size
-        #(b_s, beam, 76), (1, 1, 76)
+        #(b_s, beam, 76), (6, 1, 76)
         word_logprob = self.model.step(t, self.selected_words, visual, pixels, None, mode='feedback', **kwargs)
         word_logprob = word_logprob.view(self.b_s, cur_beam_size, -1)
         candidate_logprob = self.seq_logprob + word_logprob # beam上的连续概率

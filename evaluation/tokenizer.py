@@ -29,12 +29,12 @@ class PTBTokenizer(object):
             if isinstance(corpus[0], list) or isinstance(corpus[0], tuple):
                 corpus = {i:c for i, c in enumerate(corpus)}
             else:
-                corpus = {i: [c, ] for i, c in enumerate(corpus)}
+                corpus = {i: [c, ] for i, c in enumerate(corpus)} # [str]->[[],,,]
 
         # prepare data for PTB Tokenizer
         tokenized_corpus = {}
-        image_id = [k for k, v in list(corpus.items()) for _ in range(len(v))]
-        sentences = '\n'.join([c.replace('\n', ' ') for k, v in corpus.items() for c in v]) # 全都放到一段话中
+        image_id = [k for k, v in list(corpus.items()) for _ in range(len(v))] # 每句话对应的key
+        sentences = '\n'.join([c.replace('\n', ' ') for k, v in corpus.items() for c in v]) # 全都放到一段话中，每句话以换行符相隔
 
         # save sentences to temporary file，临时文件可以自动删除
         path_to_jar_dirname=os.path.dirname(os.path.abspath(__file__))
@@ -56,8 +56,7 @@ class PTBTokenizer(object):
         for k, line in zip(image_id, lines):
             if not k in tokenized_corpus:
                 tokenized_corpus[k] = []
-            tokenized_caption = ' '.join([w for w in line.rstrip().split(' ') \
-                                          if w not in cls.punctuations])
+            tokenized_caption = ' '.join([w for w in line.rstrip().split(' ') if w not in cls.punctuations])
             tokenized_corpus[k].append(tokenized_caption)
 
 
