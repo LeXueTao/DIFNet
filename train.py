@@ -132,24 +132,34 @@ def train_scst(model, dataloader, optim, cider, text_field):
         for it, ((detections, pixels), caps_gt) in enumerate(dataloader):
             detections = detections.to(device)
             pixels = pixels.to(device)
-            beam_time1 = time.time()
+            
             outs, log_probs = model.beam_search(detections, pixels, seq_len, text_field.vocab.stoi['<eos>'],
                                                 beam_size, out_size=beam_size)
             optim_rl.zero_grad()
-            beam_time2 = time.time()
+            
             # Rewards
+<<<<<<< HEAD
             reward_time1 = time.time()
             caps_gen = text_field.decode(outs.view(-1, seq_len)) #[str]
             caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt))) # [[str1, str2,,,],,]
+=======
+            decode_time1 = time.time()
+            caps_gen = text_field.decode(outs.view(-1, seq_len))  # [b_s:12, 5, 20]-> [b_s*5 ,20]
+            decode_time2 = time.time()
+            
+            caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
+            beam_time1 = time.time()
+>>>>>>> e6e60c720fa90393db271e3e4afc07a0a59acfc5
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
-            reward_time2 = time.time()
+            beam_time2 = time.time()
+            
             reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
             
             reward = torch.from_numpy(reward).to(device).view(detections.shape[0], beam_size)
             reward_baseline = torch.mean(reward, -1, keepdim=True)
             loss = -torch.mean(log_probs, -1) * (reward - reward_baseline)
             
-            print("beam_time:{},\treward_time:{}".format(beam_time2-beam_time1, reward_time2-reward_time1))
+            print("token_time:{},\tdecode_time:{}".format(beam_time2-beam_time1, decode_time2-decode_time1))
             loss = loss.mean()
             loss.backward()
             optim_rl.step()
