@@ -249,13 +249,13 @@ class COCO(PairedDataset):
 
         #TODO:得改！！！！
         # 取训练集数据
-        # for index in ann_ids_train:
-        #     caption = coco_train.anns[index]['caption']
-        #     img_id = coco_train.anns[index]['image_id']
-        #     filename = coco_train.loadImgs(img_id)[0]['file_name']
-        #     # 生成一个类，类属性是这三个东西
-        #     example = Example.fromdict({'image': os.path.join( root_train, filename), 'text': caption, 'pixel': os.path.join( root_train, filename)})
-        #     all_samples.append(example)
+        for index in ann_ids_train:
+            caption = coco_train.anns[index]['caption']
+            img_id = coco_train.anns[index]['image_id']
+            filename = coco_train.loadImgs(img_id)[0]['file_name']
+            # 生成一个类，类属性是这三个东西
+            example = Example.fromdict({'image': os.path.join( root_train, filename), 'text': caption, 'pixel': os.path.join( root_train, filename)})
+            all_samples.append(example)
         
         # 取测试集集数据
         for index in ann_ids_val:
@@ -268,7 +268,7 @@ class COCO(PairedDataset):
 
         # 打乱数据
         random.shuffle(all_samples)
-        all_samples = all_samples[:15000]
+        # all_samples = all_samples[:15000]
         #TODO: 得改！！！
         val_samples = all_samples[0:5000]
         test_samples = all_samples[5000:10000]

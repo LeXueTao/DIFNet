@@ -9,19 +9,15 @@
             "type": "python",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-<<<<<<< HEAD
             // "env": {"CUDA_VISIBLE_DEVICES": "0"},
-=======
-            // "env": {"CUDA_VISIBLE_DEVICES": "3"},
->>>>>>> e6e60c720fa90393db271e3e4afc07a0a59acfc5
             "console": "integratedTerminal",
             "justMyCode": true,
             // 训练
-            "program": "./train.py",
-            "args": ["--mode", "difnet",
-                     "--exp_name", "DIFNet"],
+            // "program": "./train.py",
+            // "args": ["--mode", "difnet",
+            //          "--exp_name", "DIFNet"],
             // 测试
-            // "program": "./test.py",
+            "program": "./test.py",
             // "args": ["--mode", "difnet_lrp",
             //         "--exp_name", "DIFNet_lrp"],
         }

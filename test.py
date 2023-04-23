@@ -1,5 +1,5 @@
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import random
 from data import ImageDetectionsField1, TextField, RawField, PixelField, ImageDetectionsField152
 from data import COCO, DataLoader
@@ -13,7 +13,7 @@ from tqdm import tqdm
 import argparse
 import pickle
 import numpy as np
-import cv2
+# import cv2
 import json
 
 random.seed(1234)
@@ -76,22 +76,22 @@ def predict_captions(model, dataloader, text_field, out_file):
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    parser = argparse.ArgumentParser(description='DIFNet')
-    parser.add_argument('--exp_name', type=str, default='transformer_grid_original')
+    parser = argparse.ArgumentParser(description='DIFNet_lrp')
+    parser.add_argument('--exp_name', type=str, default='DIFNet_lrp')
     # parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=50)
-    parser.add_argument('--workers', type=int, default=4)
+    parser.add_argument('--workers', type=int, default=7)
     parser.add_argument('--model_path', type=str, default='./output/saved_transformer_models')
     parser.add_argument('--out_path', type=str, default='./output/output_lrp')
-    parser.add_argument('--features_path', type=str, default='./dataset/coco_grid_feats2.hdf5')
-    parser.add_argument('--annotation_folder', type=str, default='./dataset/coco2014/annotations')
-    parser.add_argument('--pixel_path', type=str, default='./dataset/segmentations')
+    parser.add_argument('--features_path', type=str, default='./datasets/coco2014_gridfeats')
+    parser.add_argument('--annotation_folder', type=str, default='./datasets/coco2014/annotations')
+    parser.add_argument('--pixel_path', type=str, default='./datasets/coco2014_seg')
 
     parser.add_argument('--embed_size', type=int, default=512,
                         help='dimension of word embedding vectors')
     parser.add_argument('--d_model', type=int, default=512,
                         help='dimension of lstm hidden states')
-    parser.add_argument('--mode', type=str, default='base', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
+    parser.add_argument('--mode', type=str, default='difnet_lrp', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
     args = parser.parse_args()
 
     print('{} Evaluation'.format(args.mode))
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     text_field.vocab = pickle.load(open('vocab.pkl', 'rb'))
 
     # Create the dataset
-    dataset = COCO(image_field, text_field, pixel_field, 'coco/images/', args.annotation_folder, args.annotation_folder)
+    dataset = COCO(image_field, text_field, pixel_field, './datasets/coco2014', args.annotation_folder, args.annotation_folder)
     _, _, test_dataset = dataset.splits
 
     # Model and dataloaders
