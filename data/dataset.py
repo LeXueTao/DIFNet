@@ -59,10 +59,16 @@ class Dataset(object):
     def __len__(self):
         return len(self.examples)
     # 返回一个迭代器，节省空间
+    # TODO: 只在train中使用了一次，收集所有的text
     def __getattr__(self, attr): 
         if attr in self.fields:
+            exp_value = []
             for x in self.examples:
-                yield getattr(x, attr)
+                exp_value.append(getattr(x, attr))
+            return exp_value
+                
+        else:
+            raise AttributeError("666")
 
 
 class ValueDataset(Dataset):
@@ -138,7 +144,8 @@ class DictionaryDataset(Dataset):
         return collate
 
     def __getitem__(self, i):
-        return self.key_dataset[i], self.value_dataset[i]
+        key, value = self.key_dataset[i], self.value_dataset[i]
+        return key, value
 
     def __len__(self):
         return len(self.key_dataset)
@@ -196,6 +203,7 @@ class PairedDataset(Dataset):
     @property
     def splits(self):
         raise NotImplementedError
+    
 
 
 class COCO(PairedDataset):
@@ -218,6 +226,9 @@ class COCO(PairedDataset):
             self.train_examples, self.val_examples, self.test_examples = self.get_samples(roots, ids)
         examples = self.train_examples + self.val_examples + self.test_examples
         super(COCO, self).__init__(examples, {'image': image_field, 'text': text_field, 'pixel': pixel_field})
+
+
+
 
     @property
     def splits(self):
@@ -255,7 +266,7 @@ class COCO(PairedDataset):
             filename = coco_train.loadImgs(img_id)[0]['file_name']
             # 生成一个类，类属性是这三个东西
             example = Example.fromdict({'image': os.path.join( root_train, filename), 'text': caption, 'pixel': os.path.join( root_train, filename)})
-            all_samples.append(example)
+            train_samples.append(example)
         
         # 取测试集集数据
         for index in ann_ids_val:
@@ -264,15 +275,16 @@ class COCO(PairedDataset):
             filename = coco_val.loadImgs(img_id)[0]['file_name']
             # 生成一个类，类属性是这三个东西
             example = Example.fromdict({'image': os.path.join(root_val, filename), 'text': caption, 'pixel': os.path.join(root_val, filename)})
-            all_samples.append(example)
+            test_samples.append(example)
+            val_samples.append(example)
 
         # 打乱数据
         random.shuffle(all_samples)
         # all_samples = all_samples[:15000]
         #TODO: 得改！！！
-        val_samples = all_samples[0:5000]
-        test_samples = all_samples[5000:10000]
-        train_samples = all_samples[10000:]        
+        # val_samples = all_samples[0:2]
+        # test_samples = all_samples[5:]
+        # train_samples = all_samples[3:4]        
 
         return train_samples, val_samples, test_samples
 

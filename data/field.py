@@ -404,7 +404,10 @@ class PixelField(RawField):
 
 
 class ImageDetectionsField1(RawField):
-    '''return image_id, grid feature'''
+    '''
+    :return image_id, grid feature
+    :测试专用
+    '''
     def __init__(self, preprocessing=None, postprocessing=None, detections_path=None, max_detections=100,
                  sort_by_prob=False, load_in_tmp=True):
         self.max_detections = max_detections
@@ -428,22 +431,32 @@ class ImageDetectionsField1(RawField):
         super(ImageDetectionsField1, self).__init__(preprocessing, postprocessing)
 
     def preprocess(self, x, avoid_precomp=False):
+        start_time = time.time()
         image_id = int(x.split('_')[-1].split('.')[0])
-        try:
-            f = h5py.File(self.detections_path, 'r')
-            precomp_data = f['%d_features' % image_id][()]
-            # precomp_data = f['%d_grids' % image_id][()]
-            if self.sort_by_prob:
-                precomp_data = precomp_data[np.argsort(np.max(f['%d_cls_prob' % image_id][()], -1))[::-1]]
-        except KeyError:
-            warnings.warn('Could not find detections for %d' % image_id)
+        image_root_train = "./datasets/coco2014_gridfeats/X101_train/"
+        image_root_val = "./datasets/coco2014_gridfeats/X101_val/"
+        image_path_train = image_root_train + str(image_id) + '.npy'
+        image_path_val = image_root_val + str(image_id)+ '.npy'
+        # 这里由于数据分别存在val和train，而又要统一加载
+        if 'train' in x:
+            precomp_data = np.load(image_path_train)
+        elif 'val' in x:
+            precomp_data = np.load(image_path_val)
+        else:
+            warnings.warn('image no exists!!!')
             precomp_data = np.random.rand(10,2048)
-
+        end_time = time.time()
+        # print('load_image_time:{}'.format(end_time-start_time))
+        start_time1 = time.time()
+        # 这里设置的大小是7*7=49的大小
         delta = self.max_detections - precomp_data.shape[0]
-        if delta > 0:
+        if delta > 0:# 如果没有这张图片，前半部分随机数，后面再补0
             precomp_data = np.concatenate([precomp_data, np.zeros((delta, precomp_data.shape[1]))], axis=0)
-        elif delta < 0:
+        elif delta < 0:# 如果过长直接截断
             precomp_data = precomp_data[:self.max_detections]
+        precomp_data = precomp_data.astype(np.float32)
+        end_time1 = time.time()
+        # print("image_time_1:{},  image_time_2:{}".format(end_time-start_time, end_time1-start_time1))
 
-        return image_id, precomp_data.astype(np.float32)
+        return image_id, precomp_data
 

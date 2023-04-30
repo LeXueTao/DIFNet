@@ -1,6 +1,9 @@
 from .field import RawField, Merge, ImageDetectionsField, ImageDetectionsField152, TextField, PixelField, \
                     ImageDetectionsField1
 from .dataset import COCO
+
+from .vocab import Vocab
+
 from torch.utils.data import DataLoader as TorchDataLoader
 
 class DataLoader(TorchDataLoader):

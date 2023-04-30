@@ -33,7 +33,7 @@ class PTBTokenizer(object):
 
         # prepare data for PTB Tokenizer
         tokenized_corpus = {}
-        image_id = [k for k, v in list(corpus.items()) for _ in range(len(v))] # 每句话对应的key
+        image_id = [k for k, v in list(corpus.items()) for _ in range(len(v))] # 每句话对应的key，key会重复
         sentences = '\n'.join([c.replace('\n', ' ') for k, v in corpus.items() for c in v]) # 全都放到一段话中，每句话以换行符相隔
 
         # save sentences to temporary file，临时文件可以自动删除
@@ -55,7 +55,7 @@ class PTBTokenizer(object):
         # create dictionary for tokenized captions
         for k, line in zip(image_id, lines):
             if not k in tokenized_corpus:
-                tokenized_corpus[k] = []
+                tokenized_corpus[k] = [] # 下面语句是去除标点符号
             tokenized_caption = ' '.join([w for w in line.rstrip().split(' ') if w not in cls.punctuations])
             tokenized_corpus[k].append(tokenized_caption)
 

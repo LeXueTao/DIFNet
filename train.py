@@ -24,7 +24,6 @@ from shutil import copyfile
 
 import time
 
-
 random.seed(1234)
 torch.manual_seed(1234)
 np.random.seed(1234)
@@ -92,7 +91,7 @@ def train_xe(model, dataloader, optim, text_field):
             time1 = time.time()
             out = model(detections, captions, pixels)
             time2 = time.time()
-            print('tt:{}'.format(time2 - time1))
+            # print('tt:{}'.format(time2 - time1))
             start_time = time.time()
             optim.zero_grad()
             captions_gt = captions[:, 1:].contiguous()
@@ -243,11 +242,11 @@ if __name__ == '__main__':
 
 
     def lambda_lr(s):
-        base_lr = 0.001
+        base_lr = 0.0001
         if s <= 3:
-            lr = base_lr 
+            lr = base_lr * s /4
         elif s <= 10:
-            lr = base_lr /4
+            lr = base_lr
         elif s <= 12:
             lr = base_lr * 0.2
         else:
@@ -256,10 +255,10 @@ if __name__ == '__main__':
         return lr
 
     def lambda_lr_rl(s):
-        base_lr = 5e-5
-        if s <= 9:
+        base_lr = 5e-6
+        if s <= 29:
             lr = base_lr
-        elif s <= 11:
+        elif s <= 31:
             lr = base_lr * 0.2
         else:
             lr = base_lr * 0.2 * 0.2
@@ -303,7 +302,7 @@ if __name__ == '__main__':
                 data['epoch'], data['val_loss'], data['best_cider']))
             print('patience:', data['patience'])
             print('num_workers:', args.workers)
-    #TODO: 这里！！！
+
     ref_caps_train = list(train_dataset.text)
     cider_train = Cider(PTBTokenizer.tokenize(ref_caps_train))
 
@@ -316,6 +315,7 @@ if __name__ == '__main__':
         dict_dataloader_train = DataLoader(dict_dataset_train, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
         dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
         dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5, shuffle=True,num_workers=args.workers)
+
 
         if not use_rl:
             print("epoch:{},\tlr:{}".format(e, scheduler.get_last_lr()))

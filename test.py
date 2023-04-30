@@ -1,5 +1,4 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import random
 from data import ImageDetectionsField1, TextField, RawField, PixelField, ImageDetectionsField152
 from data import COCO, DataLoader
@@ -15,6 +14,7 @@ import pickle
 import numpy as np
 # import cv2
 import json
+# from torch.utils.data import DataLoader
 
 random.seed(1234)
 torch.manual_seed(1234)
@@ -28,7 +28,7 @@ def predict_captions(model, dataloader, text_field, out_file):
     gts = {}
     outs = {}
     with tqdm(desc='Evaluation', unit='it', total=len(dataloader)) as pbar:
-        for it, ((img_id, images, pixels), caps_gt) in enumerate(iter(dataloader)):
+        for it, ((img_id, images, pixels), caps_gt) in enumerate(dataloader):
             # print(img_id.data.numpy()[0])
             images = images.to(device)
             # images = torch.zeros((50, 49, 2048)).to(device)
@@ -39,7 +39,7 @@ def predict_captions(model, dataloader, text_field, out_file):
                 out, _ = model.beam_search(images, pixels, 20, text_field.vocab.stoi['<eos>'], 5, out_size=1)
             caps_gen = text_field.decode(out, join_words=False)
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
-                gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)])
+                gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)]) # 消除重复元素
                 gen['%d_%d' % (it, i)] = [gen_i.strip(), ]
                 gts['%d_%d' % (it, i)] = gts_i
 
@@ -74,13 +74,13 @@ def predict_captions(model, dataloader, text_field, out_file):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
-    parser = argparse.ArgumentParser(description='DIFNet_lrp')
-    parser.add_argument('--exp_name', type=str, default='DIFNet_lrp')
+    parser = argparse.ArgumentParser(description='DIFNet')
+    parser.add_argument('--exp_name', type=str, default='DIFNet_best')
     # parser.add_argument('--batch_size', type=int, default=1)
-    parser.add_argument('--batch_size', type=int, default=50)
-    parser.add_argument('--workers', type=int, default=7)
+    parser.add_argument('--batch_size', type=int, default=48)
+    parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--model_path', type=str, default='./output/saved_transformer_models')
     parser.add_argument('--out_path', type=str, default='./output/output_lrp')
     parser.add_argument('--features_path', type=str, default='./datasets/coco2014_gridfeats')
@@ -107,8 +107,10 @@ if __name__ == '__main__':
     text_field.vocab = pickle.load(open('vocab.pkl', 'rb'))
 
     # Create the dataset
-    dataset = COCO(image_field, text_field, pixel_field, './datasets/coco2014', args.annotation_folder, args.annotation_folder)
-    _, _, test_dataset = dataset.splits
+    coco_dataset = COCO(image_field, text_field, pixel_field, './datasets/coco2014', args.annotation_folder, args.annotation_folder)
+    _, _, dataset_test = coco_dataset.splits
+
+
 
     # Model and dataloaders
     if args.mode == 'base':
@@ -128,12 +130,13 @@ if __name__ == '__main__':
         decoder = TransformerDecoder_LRP(len(text_field.vocab), 54, 3, text_field.vocab.stoi['<pad>'])
         model = Difnet_LRP(text_field.vocab.stoi['<bos>'], encoder, decoder).to(device)
 
-    data = torch.load(os.path.join(args.model_path, args.exp_name + '.pth'))
+    data = torch.load(os.path.join(args.model_path, args.exp_name + '.pth'), map_location=device)
     model.load_state_dict(data['state_dict'])
 
 
-    dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
+    dict_dataset_test = dataset_test.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
     dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers)
+
 
     # out_file = open(os.path.join(args.out_path, args.exp_name + '.json'), 'w')
     # out_file = open(os.path.join(args.out_path, args.exp_name + '.txt'), 'w')
