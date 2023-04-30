@@ -91,7 +91,7 @@ if __name__ == '__main__':
                         help='dimension of word embedding vectors')
     parser.add_argument('--d_model', type=int, default=512,
                         help='dimension of lstm hidden states')
-    parser.add_argument('--mode', type=str, default='difnet_lrp', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
+    parser.add_argument('--mode', type=str, default='difnet', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
     args = parser.parse_args()
 
     print('{} Evaluation'.format(args.mode))
