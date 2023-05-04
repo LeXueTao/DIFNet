@@ -178,7 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
-    parser.add_argument('--resume_last', action='store_true', default=False)
+    parser.add_argument('--resume_last', action='store_true', default=True)
     parser.add_argument('--resume_best', action='store_true', default=False)
     parser.add_argument('--features_path', type=str, default='./datasets/coco2014_gridfeats')
     parser.add_argument('--pixel_path', type=str, default='./datasets/coco2014_seg')
