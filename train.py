@@ -68,7 +68,7 @@ def evaluate_metrics(model, dataloader, text_field):
                 out, _ = model.beam_search(images, pixels, 20, text_field.vocab.stoi['<eos>'], 5, out_size=1)
             caps_gen = text_field.decode(out, join_words=False)
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
-                gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)]) #TODO: 去除重复元素（如果由重复元素呢？？）
+                gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)]) 
                 gen['%d_%d' % (it, i)] = [gen_i, ]
                 gts['%d_%d' % (it, i)] = gts_i
             pbar.update()
@@ -215,7 +215,7 @@ if __name__ == '__main__':
         text_field.vocab = pickle.load(open('vocab.pkl', 'rb'))
 
 
-    #TODO: 这里太慢了！！将近40s
+
     dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
     dict_dataset_val = val_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
     dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})

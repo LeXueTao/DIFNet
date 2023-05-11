@@ -212,7 +212,7 @@ class TextField(RawField):
         self.pad_first = pad_first # pad放在前面还是后面
         self.truncate_first = truncate_first # 从前面截断还是后面截断
         self.vocab = None
-        self.vectors = vectors #TODO: ??
+        self.vectors = vectors 
         if nopoints:
             self.punctuations.append("..")
         # 这里的数据形式是被pad包含着的bos还有eos

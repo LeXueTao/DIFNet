@@ -59,7 +59,6 @@ class Dataset(object):
     def __len__(self):
         return len(self.examples)
     # 返回一个迭代器，节省空间
-    # TODO: 只在train中使用了一次，收集所有的text
     def __getattr__(self, attr): 
         if attr in self.fields:
             exp_value = []
@@ -258,7 +257,7 @@ class COCO(PairedDataset):
         root_val = roots['val']['img']
         ann_ids_val = list(coco_val.anns.keys())
 
-        #TODO:得改！！！！
+
         # 取训练集数据
         for index in ann_ids_train:
             caption = coco_train.anns[index]['caption']
@@ -280,11 +279,7 @@ class COCO(PairedDataset):
 
         # 打乱数据
         random.shuffle(all_samples)
-        # all_samples = all_samples[:15000]
-        #TODO: 得改！！！
-        # val_samples = all_samples[0:2]
-        # test_samples = all_samples[5:]
-        # train_samples = all_samples[3:4]        
+    
 
         return train_samples, val_samples, test_samples
 
