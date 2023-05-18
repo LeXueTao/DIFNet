@@ -174,11 +174,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
-    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--batch_size', type=int, default=48)
     parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
-    parser.add_argument('--resume_last', action='store_true', default=True)
+    parser.add_argument('--resume_last', action='store_true')
     parser.add_argument('--resume_best', action='store_true')
     parser.add_argument('--features_path', type=str, default='./datasets/coco2014_gridfeats')
     parser.add_argument('--pixel_path', type=str, default='./datasets/coco2014_seg')
@@ -352,18 +352,6 @@ if __name__ == '__main__':
         writer.add_scalar('data/val_meteor', scores['METEOR'], e)
         writer.add_scalar('data/val_rouge', scores['ROUGE'], e)
 
-        # Test scores
-        test_scor_start = time.time()
-        scores = evaluate_metrics(model, dict_dataloader_test, text_field)
-        test_scor_end = time.time()
-        # print("test_score_time:{}".format(test_scor_end-test_scor_start))
-        print("Test scores", scores)
-        test_cider = scores['CIDEr']
-        writer.add_scalar('data/test_cider', test_cider, e)
-        writer.add_scalar('data/test_bleu1', scores['BLEU'][0], e)
-        writer.add_scalar('data/test_bleu4', scores['BLEU'][3], e)
-        writer.add_scalar('data/test_meteor', scores['METEOR'], e)
-        writer.add_scalar('data/test_rouge', scores['ROUGE'], e)
 
         # Prepare for next epoch
         best = False

@@ -35,7 +35,9 @@ class Difnet(CaptioningModel1):
                 nn.Dropout(p=0.1),
                 nn.LayerNorm(self.decoder.d_model))
         # self.embed_pixel = ModePool2D()
-
+        #TODO: 改嵌入
+        self.pixel_flatten = Flatten()
+        self.pixel_emb = nn.Embedding(133, 512)
         self.register_state('enc_output', None)
         self.register_state('mask_enc', None)
         self.init_weights()
@@ -51,7 +53,11 @@ class Difnet(CaptioningModel1):
 
     def forward(self, images, seq, pixel, *args):
         images = self.embed_image(images)
-        pixel = self.embed_pixel(pixel)
+        #TODO: 改嵌入
+        pixel = self.pixel_flatten(pixel)
+        _, pixel = torch.max(pixel, dim=-1)
+        pixel = self.pixel_emb(pixel)
+        # pixel = self.embed_pixel(pixel)
         enc_output, mask_enc = self.encoder(images, pixel)
         dec_output = self.decoder(seq, enc_output, mask_enc)
         return dec_output

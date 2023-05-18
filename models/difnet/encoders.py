@@ -43,7 +43,7 @@ class MultiLevelEncoder(nn.Module):
                                                   attention_module=attention_module,
                                                   attention_module_kwargs=attention_module_kwargs)
                                      for _ in range(N)])
-
+        
         self.padding_idx = padding_idx
 
     def forward(self, input, pixel, attention_weights=None):
@@ -67,8 +67,8 @@ class MultiLevelEncoder(nn.Module):
                 out = l(out, out, out, attention_mask, attention_weights, m=0)
             else:
                 out = l(out, out, out, attention_mask, attention_weights, m=0)
-        #TODO:去掉残差
-        # out = out + x1 + x2
+
+        out = out + x1 + x2
         return out, attention_mask
 
 
