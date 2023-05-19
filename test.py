@@ -1,7 +1,9 @@
 import os
 import random
-from data import ImageDetectionsField1, TextField, RawField, PixelField, ImageDetectionsField152
-from data import COCO, DataLoader
+# from data import ImageDetectionsField1, TextField, RawField, PixelField, ImageDetectionsField152
+# from data import COCO, DataLoader
+from test_data import ImageDetectionsField1, TextField, RawField, PixelField, ImageDetectionsField152
+from test_data import COCO, DataLoader
 import evaluation
 from models.transformer import TransformerEncoder, TransformerDecoder, ScaledDotProductAttention, Transformer
 from models.transformer_lrp import TransformerEncoder_LRP, TransformerDecoder_LRP, ScaledDotProductAttention_LRP, Transformer_LRP
