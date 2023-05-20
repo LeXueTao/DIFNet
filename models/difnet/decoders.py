@@ -58,7 +58,7 @@ class DifnetDecoder(Module):
         self.register_state('running_seq', torch.zeros((1,)).long())
 
     def forward(self, input, encoder_output, mask_encoder):
-        # input (b_s, seq_len)
+        # input (b_s, seq_len); mask_encoder (b_s, 1, 1, seq_len)
         b_s, seq_len = input.shape[:2]
         # (b_s, seq_len, 1) 找到pad的位置开头/尾巴
         mask_queries = (input != self.padding_idx).unsqueeze(-1).float()  
@@ -80,7 +80,7 @@ class DifnetDecoder(Module):
         if self._is_stateful:
             self.running_seq.add_(1) # (1, 1) 0
             seq = self.running_seq
-        # seq是为了位置嵌入
+        # seq是为了位置嵌入 out (b_s, seq_len, d_model)
         out = self.word_emb(input) + self.pos_emb(seq)
         
         for i, l in enumerate(self.layers):
