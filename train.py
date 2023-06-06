@@ -170,7 +170,7 @@ def train_scst(model, dataloader, optim, cider, text_field):
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda:2')
+    device = torch.device('cuda:3')
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
@@ -266,11 +266,11 @@ if __name__ == '__main__':
 
     # 交叉熵训练
     optim = Adam(model.parameters(), lr=1, betas=(0.9, 0.98))
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lambda_lr)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lambda_lr, last_epoch=-1)
 
     # scst训练
     optim_rl = Adam(model.parameters(), lr=1, betas=(0.9, 0.98))
-    scheduler_rl = torch.optim.lr_scheduler.LambdaLR(optim_rl, lambda_lr_rl)
+    scheduler_rl = torch.optim.lr_scheduler.LambdaLR(optim_rl, lambda_lr_rl, last_epoch=-1)
 
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
     use_rl = False
