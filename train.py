@@ -170,7 +170,7 @@ def train_scst(model, dataloader, optim, cider, text_field):
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda:3')
+    device = torch.device('cuda:2')
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     parser.add_argument('--logs_folder', type=str, default='./output/tensorboard_logs')
     parser.add_argument('--model_path', type=str, default='./output/saved_transformer_models')
 
-    parser.add_argument('--mode', type=str, default='difnet', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
+    parser.add_argument('--mode', type=str, default='transformer', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
     args = parser.parse_args()
     print(args)
 
