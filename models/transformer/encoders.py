@@ -27,7 +27,7 @@ class EncoderLayer(nn.Module):
 
 class MultiLevelEncoder(nn.Module):
     def __init__(self, N, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 identity_map_reordering=False, attention_module=None, attention_module_kwargs=None):
+                 identity_map_reordering=True, attention_module=None, attention_module_kwargs=None):
         super(MultiLevelEncoder, self).__init__()
         self.d_model = d_model
         self.dropout = dropout
