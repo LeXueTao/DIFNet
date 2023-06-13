@@ -244,7 +244,7 @@ if __name__ == '__main__':
     def lambda_lr(s):
         base_lr = 0.0001
         if s <= 3:
-            lr = base_lr * s /4
+            lr = base_lr * (s+1) /4
         elif s <= 10:
             lr = base_lr
         elif s <= 12:
