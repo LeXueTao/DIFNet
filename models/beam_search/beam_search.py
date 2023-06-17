@@ -97,7 +97,7 @@ class BeamSearch(object):
         selected_logprob, selected_idx = torch.sort(candidate_logprob.view(self.b_s, -1), -1, descending=True)
         selected_logprob, selected_idx = selected_logprob[:, :self.beam_size], selected_idx[:, :self.beam_size]
         return selected_idx, selected_logprob
-
+    # visiual: (9, 49, 2048), b_s: 9
     def iter(self, t: int, visual: utils.TensorOrSequence, depths: utils.TensorOrSequence, outputs, return_probs, **kwargs):
         cur_beam_size = 1 if t == 0 else self.beam_size
 
@@ -120,7 +120,7 @@ class BeamSearch(object):
         selected_words = selected_idx - selected_beam * candidate_logprob.shape[-1]
 
         self.model.apply_to_states(self._expand_state(selected_beam, cur_beam_size))
-        visual = self._expand_visual(visual, cur_beam_size, selected_beam)
+        visual = self._expand_visual(visual, cur_beam_size, selected_beam) # 这里在第0步后面波没变过
 
         self.seq_logprob = selected_logprob.unsqueeze(-1)
         self.seq_mask = torch.gather(self.seq_mask, 1, selected_beam.unsqueeze(-1))

@@ -1,6 +1,6 @@
 import random
-from data import ImageDetectionsField, TextField, RawField, PixelField
-from data import COCO, DataLoader
+from test_data import ImageDetectionsField, TextField, RawField, PixelField
+from test_data import COCO, DataLoader
 import evaluation
 from evaluation import PTBTokenizer, Cider
 from models.transformer import TransformerEncoder, TransformerDecoder, ScaledDotProductAttention, Transformer
@@ -273,7 +273,7 @@ if __name__ == '__main__':
     scheduler_rl = torch.optim.lr_scheduler.LambdaLR(optim_rl, lambda_lr_rl, last_epoch=-1)
 
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
-    use_rl = False
+    use_rl = True
     best_cider = .0
     patience = 0
     start_epoch = 0
