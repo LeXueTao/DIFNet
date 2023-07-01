@@ -35,7 +35,7 @@ def reporthook(t):
 
 def get_tokenizer(tokenizer):
     """直接用spacy"""
-    spacy_en = spacy.load('en')
+    spacy_en = spacy.load('en_core_web_sm')
     # 按照词语和符号划分
     return lambda s:[tok.text for tok in spacy_en.tokenizer(s)]
     # if callable(tokenizer):

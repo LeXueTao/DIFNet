@@ -2,8 +2,8 @@ import os
 import random
 # from data import ImageDetectionsField1, TextField, RawField, PixelField, ImageDetectionsField152
 # from data import COCO, DataLoader
-from test_data import ImageDetectionsField1, TextField, RawField, PixelField, ImageDetectionsField152
-from test_data import COCO, DataLoader
+from data import ImageDetectionsField1, TextField, RawField, PixelField, ImageDetectionsField152
+from data import COCO, DataLoader
 import evaluation
 from models.transformer import TransformerEncoder, TransformerDecoder, ScaledDotProductAttention, Transformer
 from models.transformer_lrp import TransformerEncoder_LRP, TransformerDecoder_LRP, ScaledDotProductAttention_LRP, Transformer_LRP
@@ -76,14 +76,14 @@ def predict_captions(model, dataloader, text_field, out_file):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
 
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet_best')
     # parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=48)
     parser.add_argument('--workers', type=int, default=4)
-    parser.add_argument('--model_path', type=str, default='./output/saved_transformer_models')
+    parser.add_argument('--model_path', type=str, default='./output/saved_transformer_models/')
     parser.add_argument('--out_path', type=str, default='./output/output_lrp')
     parser.add_argument('--features_path', type=str, default='./datasets/coco2014_gridfeats')
     parser.add_argument('--annotation_folder', type=str, default='./datasets/coco2014/annotations')
@@ -93,7 +93,7 @@ if __name__ == '__main__':
                         help='dimension of word embedding vectors')
     parser.add_argument('--d_model', type=int, default=512,
                         help='dimension of lstm hidden states')
-    parser.add_argument('--mode', type=str, default='difnet', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
+    parser.add_argument('--mode', type=str, default='base', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
     args = parser.parse_args()
 
     print('{} Evaluation'.format(args.mode))
