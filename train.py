@@ -1,6 +1,8 @@
 import random
-from test_data import ImageDetectionsField, TextField, RawField, PixelField
-from test_data import COCO, DataLoader
+# from test_data import ImageDetectionsField, TextField, RawField, PixelField
+# from test_data import COCO, DataLoader
+from data import ImageDetectionsField, TextField, RawField, PixelField
+from data import COCO, DataLoader
 import evaluation
 from evaluation import PTBTokenizer, Cider
 from models.transformer import TransformerEncoder, TransformerDecoder, ScaledDotProductAttention, Transformer
@@ -119,7 +121,7 @@ def train_xe(model, dataloader, optim, text_field):
 def train_scst(model, dataloader, optim, cider, text_field):
     # Training with self-critical
     # 设置进程池，Pool()默认cpu个数
-    tokenizer_pool = multiprocessing.Pool(processes=3)
+    tokenizer_pool = multiprocessing.Pool()
     running_reward = .0
     running_reward_baseline = .0
     model.train()
@@ -170,11 +172,12 @@ def train_scst(model, dataloader, optim, cider, text_field):
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda:3')
+    device = torch.device('cuda:0')
+    use_rl = False
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 
-    parser.add_argument('--batch_size', type=int, default=48)
+    parser.add_argument('--batch_size', type=int, default=50)
     parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
@@ -273,7 +276,6 @@ if __name__ == '__main__':
     scheduler_rl = torch.optim.lr_scheduler.LambdaLR(optim_rl, lambda_lr_rl, last_epoch=-1)
 
     loss_fn = NLLLoss(ignore_index=text_field.vocab.stoi['<pad>'])
-    use_rl = True
     best_cider = .0
     patience = 0
     start_epoch = 0

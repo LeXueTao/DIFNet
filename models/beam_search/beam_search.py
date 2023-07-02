@@ -18,11 +18,11 @@ class BeamSearch(object):
         self.all_log_probs = None
 
     def _expand_state(self, selected_beam, cur_beam_size):
-        def fn(s):
+        def fn(s):  # sb(9, 5);cb(1);s(9, 49, 512)
             shape = [int(sh) for sh in s.shape]
             beam = selected_beam
             for _ in shape[1:]:
-                beam = beam.unsqueeze(-1)
+                beam = beam.unsqueeze(-1) # sb(9,5,1,1)
             s = torch.gather(s.view(*([self.b_s, cur_beam_size] + shape[1:])), 1,
                              beam.expand(*([self.b_s, self.beam_size] + shape[1:])))
             s = s.view(*([-1, ] + shape[1:]))
@@ -31,14 +31,14 @@ class BeamSearch(object):
         return fn
 
     def _expand_visual(self, visual: utils.TensorOrSequence, cur_beam_size: int, selected_beam: torch.Tensor):
-        if isinstance(visual, torch.Tensor):
+        if isinstance(visual, torch.Tensor): # 第一波:(9, 49, 2048)->(45, 49, 2048)
             visual_shape = visual.shape
-            visual_exp_shape = (self.b_s, cur_beam_size) + visual_shape[1:]
-            visual_red_shape = (self.b_s * self.beam_size,) + visual_shape[1:]
-            selected_beam_red_size = (self.b_s, self.beam_size) + tuple(1 for _ in range(len(visual_exp_shape) - 2))
-            selected_beam_exp_size = (self.b_s, self.beam_size) + visual_exp_shape[2:]
-            visual_exp = visual.view(visual_exp_shape)
-            selected_beam_exp = selected_beam.view(selected_beam_red_size).expand(selected_beam_exp_size)
+            visual_exp_shape = (self.b_s, cur_beam_size) + visual_shape[1:] #(9, 1, 49, 2048)->(9,5,49,2048)
+            visual_red_shape = (self.b_s * self.beam_size,) + visual_shape[1:] # (45, 49, 2048)
+            selected_beam_red_size = (self.b_s, self.beam_size) + tuple(1 for _ in range(len(visual_exp_shape) - 2)) # (9, 5, 1, 1)
+            selected_beam_exp_size = (self.b_s, self.beam_size) + visual_exp_shape[2:] # (9, 5, 49, 2048)
+            visual_exp = visual.view(visual_exp_shape)# (9, 1, 49, 2048)->(9,5,49,2048)
+            selected_beam_exp = selected_beam.view(selected_beam_red_size).expand(selected_beam_exp_size) #(9,5,49,2048)
             visual = torch.gather(visual_exp, 1, selected_beam_exp).view(visual_red_shape)
         else:
             new_visual = []
@@ -59,13 +59,13 @@ class BeamSearch(object):
         self.b_s = utils.get_batch_size(visual)
         self.device = utils.get_device(visual)
         self.seq_mask = torch.ones((self.b_s, self.beam_size, 1), device=self.device)
-        self.seq_logprob = torch.zeros((self.b_s, 1, 1), device=self.device)
-        self.log_probs = []
-        self.selected_words = None
+        self.seq_logprob = torch.zeros((self.b_s, 1, 1), device=self.device) # 整句概率
+        self.log_probs = [] # 每个单词的概率
+        self.selected_words = None # cur_beam
         if return_probs:
             self.all_log_probs = []
 
-        outputs = []
+        outputs = [] # 每个时间步单词
         with self.model.statefulness(self.b_s):
             for t in range(self.max_len):
                 visual, outputs = self.iter(t, visual, depths, outputs, return_probs, **kwargs)
@@ -100,15 +100,15 @@ class BeamSearch(object):
     # visiual: (9, 49, 2048), b_s: 9
     def iter(self, t: int, visual: utils.TensorOrSequence, depths: utils.TensorOrSequence, outputs, return_probs, **kwargs):
         cur_beam_size = 1 if t == 0 else self.beam_size
-
+        # 第一波(9, 1, 10201)
         word_logprob = self.model.step(t, self.selected_words, visual, depths, None, mode='feedback', **kwargs)
         word_logprob = word_logprob.view(self.b_s, cur_beam_size, -1)
-        candidate_logprob = self.seq_logprob + word_logprob
+        candidate_logprob = self.seq_logprob + word_logprob # 加上之前句子概率
 
         # Mask sequence if it reaches EOS
         if t > 0:
             mask = (self.selected_words.view(self.b_s, cur_beam_size) != self.eos_idx).float().unsqueeze(-1)
-            self.seq_mask = self.seq_mask * mask
+            self.seq_mask = self.seq_mask * mask # 更新mask
             word_logprob = word_logprob * self.seq_mask.expand_as(word_logprob)
             old_seq_logprob = self.seq_logprob.expand_as(candidate_logprob).contiguous()
             old_seq_logprob[:, :, 1:] = -999
@@ -120,7 +120,7 @@ class BeamSearch(object):
         selected_words = selected_idx - selected_beam * candidate_logprob.shape[-1]
 
         self.model.apply_to_states(self._expand_state(selected_beam, cur_beam_size))
-        visual = self._expand_visual(visual, cur_beam_size, selected_beam) # 这里在第0步后面波没变过
+        visual = self._expand_visual(visual, cur_beam_size, selected_beam)
 
         self.seq_logprob = selected_logprob.unsqueeze(-1)
         self.seq_mask = torch.gather(self.seq_mask, 1, selected_beam.unsqueeze(-1))

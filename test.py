@@ -76,7 +76,7 @@ def predict_captions(model, dataloader, text_field, out_file):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet_best')
@@ -133,7 +133,7 @@ if __name__ == '__main__':
         model = Difnet_LRP(text_field.vocab.stoi['<bos>'], encoder, decoder).to(device)
 
     data = torch.load(os.path.join(args.model_path, args.exp_name + '.pth'), map_location=device)
-    # model.load_state_dict(data['state_dict'])
+    model.load_state_dict(data['state_dict'])
 
 
     dict_dataset_test = dataset_test.image_dictionary({'image': image_field, 'text': RawField(), 'pixel': pixel_field})
