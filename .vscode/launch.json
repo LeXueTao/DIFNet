@@ -13,11 +13,12 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             // 训练
-            "program": "./train.py",
+            // "program": "./train.py",
             // "args": ["--mode", "difnet",
             //          "--exp_name", "DIFNet"],
             // 测试
             // "program": "./test.py",
+            "program":"./test_lrp_mybeam.py",
             // "args": ["--mode", "difnet_lrp",
             //         "--exp_name", "DIFNet_lrp"],
         }

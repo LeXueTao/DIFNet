@@ -23,7 +23,7 @@ torch.manual_seed(1234)
 np.random.seed(1234)
 
 
-def predict_captions(model, dataloader, text_field, out_file):
+def predict_captions(model, dataloader, text_field, device):
     import itertools
     model.eval()
     gen = {}
@@ -38,26 +38,13 @@ def predict_captions(model, dataloader, text_field, out_file):
             # pixels = torch.zeros((50, 49, 133)).to(device)
             # depths1 = depths1.to(device)
             with torch.no_grad():
-                out, _ = model.beam_search(images, pixels, 20, text_field.vocab.stoi['<eos>'], 5, out_size=1)
+                out, _ = model.beam_search_1(images, pixels, 20, text_field.vocab.stoi['<eos>'], 5, out_size=1)
             caps_gen = text_field.decode(out, join_words=False)
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
                 gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)]) # 消除重复元素
                 gen['%d_%d' % (it, i)] = [gen_i.strip(), ]
                 gts['%d_%d' % (it, i)] = gts_i
 
-                # print('gen:',gen['%d_%d' % (it, i)])
-                # print('gts:',gts['%d_%d' % (it, i)])
-                # out_file.write('gen:{}'.format(gen['%d_%d' % (it, i)]))
-                # out_file.write('gts:{}'.format(gts['%d_%d' % (it, i)]))
-                # out_file.write('img_id: {}'.format(str(img_id.data.numpy()[0])))
-                # out_file.write('\n')
-                # out_file.write('gen:{}'.format(gen['%d_%d' % (it, i)]))
-                # out_file.write('\n')
-                # out_file.write('gts:{}'.format(gts['%d_%d' % (it, i)]))
-                # out_file.write('\n')
-                outs[str(img_id.data.numpy()[0])] = {'gen': gen['%d_%d' % (it, i)], 'gts': gts['%d_%d' % (it, i)]}
-                # out_file.write(gen['%d_%d' % (it, i)][0])
-                # out_file.write('\n')
             pbar.update()
     #         if it > 5:
     #             break
@@ -76,10 +63,10 @@ def predict_captions(model, dataloader, text_field, out_file):
 
 
 if __name__ == '__main__':
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 
     parser = argparse.ArgumentParser(description='DIFNet')
-    parser.add_argument('--exp_name', type=str, default='DIFNet_best')
+    parser.add_argument('--exp_name', type=str, default='DIFNet_lrp')
     # parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=48)
     parser.add_argument('--workers', type=int, default=4)
@@ -93,7 +80,7 @@ if __name__ == '__main__':
                         help='dimension of word embedding vectors')
     parser.add_argument('--d_model', type=int, default=512,
                         help='dimension of lstm hidden states')
-    parser.add_argument('--mode', type=str, default='base', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
+    parser.add_argument('--mode', type=str, default='difnet_lrp', choices=['base', 'base_lrp', 'difnet', 'difnet_lrp'])
     args = parser.parse_args()
 
     print('{} Evaluation'.format(args.mode))
@@ -143,6 +130,6 @@ if __name__ == '__main__':
     # out_file = open(os.path.join(args.out_path, args.exp_name + '.json'), 'w')
     # out_file = open(os.path.join(args.out_path, args.exp_name + '.txt'), 'w')
     out_file = None
-    scores = predict_captions(model, dict_dataloader_test, text_field, out_file)
+    scores = predict_captions(model, dict_dataloader_test, text_field, device)
     # out_file.close()
     print(scores)

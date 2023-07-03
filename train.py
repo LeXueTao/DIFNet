@@ -1,8 +1,8 @@
 import random
-# from test_data import ImageDetectionsField, TextField, RawField, PixelField
-# from test_data import COCO, DataLoader
-from data import ImageDetectionsField, TextField, RawField, PixelField
-from data import COCO, DataLoader
+from test_data import ImageDetectionsField, TextField, RawField, PixelField
+from test_data import COCO, DataLoader
+# from data import ImageDetectionsField, TextField, RawField, PixelField
+# from data import COCO, DataLoader
 import evaluation
 from evaluation import PTBTokenizer, Cider
 from models.transformer import TransformerEncoder, TransformerDecoder, ScaledDotProductAttention, Transformer
@@ -140,7 +140,7 @@ def train_scst(model, dataloader, optim, cider, text_field):
             
             # Rewards
             reward_time1 = time.time()
-            caps_gen = text_field.decode(outs.view(-1, seq_len)) #[str]
+            caps_gen = text_field.decode(outs.view(-1, seq_len)) #[str1, str2,]
             caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt))) # [[str1, str2,,,],,]
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
             beam_time2 = time.time()
@@ -172,8 +172,8 @@ def train_scst(model, dataloader, optim, cider, text_field):
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda:0')
-    use_rl = False
+    device = torch.device('cuda:2')
+    use_rl = True
     parser = argparse.ArgumentParser(description='DIFNet')
     parser.add_argument('--exp_name', type=str, default='DIFNet')
 

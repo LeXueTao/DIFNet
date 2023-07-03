@@ -6,6 +6,7 @@ from .attention import MultiHeadAttention
 from .utils import sinusoid_encoding_table, PositionWiseFeedForward
 from models.containers import Module, ModuleList
 from ..layers_lrp import *
+from collections import defaultdict
 
 
 class DecoderLayer(Module):
@@ -14,7 +15,7 @@ class DecoderLayer(Module):
         super(DecoderLayer, self).__init__()
         self.self_att = MultiHeadAttention(d_model, d_k, d_v, h, dropout, can_be_stateful=True,
                                            attention_module=self_att_module,
-                                           attention_module_kwargs=self_att_module_kwargs)
+                                           attention_module_kwargs=self_att_module_kwargs, beam_flag=True)
         self.enc_att = MultiHeadAttention(d_model, d_k, d_v, h, dropout, can_be_stateful=False,
                                           attention_module=enc_att_module,
                                           attention_module_kwargs=enc_att_module_kwargs)
@@ -80,7 +81,7 @@ class TransformerDecoder_LRP(Module):
         self.max_len = max_len
         self.padding_idx = padding_idx
         self.N = N_dec
-
+        self.default_state = defaultdict(int)
         self.register_state('running_mask_self_attention', torch.zeros((1, 1, 0)).byte())
         self.register_state('running_seq', torch.zeros((1,)).long())
 
@@ -96,10 +97,18 @@ class TransformerDecoder_LRP(Module):
         if self._is_stateful:
             self.running_mask_self_attention = torch.cat([self.running_mask_self_attention.type_as(mask_self_attention), mask_self_attention], -1)
             mask_self_attention = self.running_mask_self_attention
+        
+        if len(self.running_mask_self_attention.shape) == 4:
+            self.running_mask_self_attention = torch.cat([self.running_mask_self_attention.type_as(mask_self_attention), mask_self_attention], -1)
+            mask_self_attention = self.running_mask_self_attention
 
         seq = torch.arange(1, seq_len + 1).view(1, -1).expand(b_s, -1).to(input.device)  # (b_s, seq_len)
         seq = seq.masked_fill(mask_queries.squeeze(-1) == 0, 0)
         if self._is_stateful:
+            self.running_seq.add_(1)
+            seq = self.running_seq
+        
+        if len(self.running_seq.shape) == 2:
             self.running_seq.add_(1)
             seq = self.running_seq
 

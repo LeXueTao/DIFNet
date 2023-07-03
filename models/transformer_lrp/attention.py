@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from models.containers import Module
 from ..layers_lrp import *
+from collections import defaultdict
 
 # from middle import TensorRecorder
 
@@ -186,7 +187,7 @@ class MultiHeadAttention(Module):
     '''
 
     def __init__(self, d_model, d_k, d_v, h, dropout=.1, identity_map_reordering=False, can_be_stateful=False,
-                 attention_module=None, attention_module_kwargs=None, comment=None):
+                 attention_module=None, attention_module_kwargs=None, comment=None, beam_flag=False):
         super(MultiHeadAttention, self).__init__()
         self.identity_map_reordering = identity_map_reordering
         self.attention = ScaledDotProductAttention_LRP(d_model=d_model, d_k=d_k, d_v=d_v, h=h, comment=comment)
@@ -194,8 +195,12 @@ class MultiHeadAttention(Module):
         self.layer_norm = LayerNorm(d_model)
         self.add = Add()
         self.clone = Clone()
-
-
+        self.beam_flag = beam_flag
+        if beam_flag==True:
+            # 存储初始状态，结束beam_search后，赋值为初始状态
+            self.default_state = defaultdict(int)
+            self.register_buffer('running_keys', torch.zeros((0, d_model)))
+            self.register_buffer('running_values', torch.zeros((0, d_model)))
         self.can_be_stateful = can_be_stateful
         if self.can_be_stateful:
             self.register_state('running_keys', torch.zeros((0, d_model)))
@@ -206,6 +211,11 @@ class MultiHeadAttention(Module):
             self.running_keys = torch.cat([self.running_keys, keys], 1)
             keys = self.running_keys
 
+            self.running_values = torch.cat([self.running_values, values], 1)
+            values = self.running_values
+        if self.beam_flag==True and len(self.running_keys.shape) == 3:
+            self.running_keys = torch.cat([self.running_keys, keys], 1)
+            keys = self.running_keys
             self.running_values = torch.cat([self.running_values, values], 1)
             values = self.running_values
 
